@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Categoria {
+  id_categorias Int     @id @default(autoincrement())
+  nome          String  @db.VarChar(80)
+
+  livros        Livro[]
+
+  @@map("categorias")
+}
+
+model Livro {
+  id_livros     Int      @id @default(autoincrement())
+  isbn          String   @unique @db.VarChar(20)
+  titulo        String   @db.VarChar(200)
+  autor         String   @db.VarChar(150)
+  editora       String   @db.VarChar(150)
+  ano           Int
+  quantidade    Int      @default(0)
+
+  id_categorias Int
+
+  categoria Categoria @relation(fields: [id_categorias], references: [id_categorias])
+
+  emprestimos Emprestimo[]
+
+  @@map("livros")
+}
+
+model Usuario {
+  id_usuarios Int    @id @default(autoincrement())
+  nome        String @db.VarChar(100)
+  email       String @unique @db.VarChar(100)
+  senha       String @db.VarChar(255)
+  tipo        String @db.VarChar(255)
+
+  leitores    Leitor[]
+  emprestimos Emprestimo[]
+
+  @@map("usuarios")
+}
+
+model Leitor {
+  id_leitores Int    @id @default(autoincrement())
+  nome        String @db.VarChar(150)
+  cpf         String @unique @db.VarChar(11)
+  telefone    String @db.VarChar(20)
+  email       String @unique @db.VarChar(150)
+
+  id_usuarios Int
+
+  usuario Usuario @relation(fields: [id_usuarios], references: [id_usuarios])
+
+  emprestimos Emprestimo[]
+
+  @@map("leitores")
+}
+
+model Emprestimo {
+  id_emprestimo  Int      @id @default(autoincrement())
+  data_emprestimo DateTime @db.Date
+  data_prevista   DateTime? @db.Date
+  data_devolucao  DateTime @db.Date
+  status          String   @db.VarChar(100)
+
+  id_leitores Int
+  id_livros   Int
+  id_usuarios Int
+
+  leitor  Leitor  @relation(fields: [id_leitores], references: [id_leitores])
+  livro   Livro   @relation(fields: [id_livros], references: [id_livros])
+  usuario Usuario @relation(fields: [id_usuarios], references: [id_usuarios])
+
+  @@map("emprestimos")
+}
