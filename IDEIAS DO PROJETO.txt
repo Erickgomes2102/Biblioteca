@@ -1,0 +1,35 @@
+biblioteca Digital                             Nomes: Erick, Thales       
+
+ 
+
+Objetivo 
+
+Desenvolver um sistema web para facilitar o gerenciamento de uma biblioteca, permitindo controlar livros, empréstimos, devoluções e usuários de forma rápida, organizada e segura. 
+
+Qual problema ele resolve? 
+
+Muitas bibliotecas pequenas (como as de escolas, igrejas, ONGs ou centros comunitários) ainda fazem o controle dos livros em cadernos ou planilhas. Isso pode causar problemas como: 
+
+Perda de informações.  
+
+Dificuldade para saber quem está com um livro.  
+
+Livros emprestados sem controle.  
+
+Erros na contagem de exemplares.  
+
+Demora para localizar um livro. 
+
+Como funciona? 
+
+O bibliotecário faz login.  
+
+Cadastra os livros.  
+
+Cadastra os leitores.  
+
+Realiza empréstimos.  
+
+Registra devoluções.  
+
+Acompanha tudo pelo dashboard. 
