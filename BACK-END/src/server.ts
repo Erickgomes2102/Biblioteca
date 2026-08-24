@@ -20,4 +20,4 @@ app.use((err: Error, req: Request, res: Response, next:NextFunction) => {
     })
 })
 
-app.listen(2401, () => console.log('Servidor Online / Porta 3334'))
+app.listen(3334, () => console.log('Servidor Online / Porta 3334'))
