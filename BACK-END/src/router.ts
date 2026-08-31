@@ -2,6 +2,9 @@ import { Router } from "express";
 import { categoriaController } from "./Controllers/categoriasControllers";
 import { livrosController } from "./Controllers/livrosControllers";
 import { usuariosController } from "./Controllers/usuariosControllers";
+import { leitoresController } from "./Controllers/leitoresControllers";
+import { emprestimosController } from "./Controllers/emprestimosControllers";
+import { dashboardController } from "./Controllers/dashboardControllers";
 
 const router = Router()
 
@@ -28,6 +31,25 @@ router.get('/BuscarUsuario/email/:email', new usuariosController().buscarUsuario
 router.put('/EditarUsuario/:id_usuarios', new usuariosController().editarUsuario)
 router.delete('/ExcluirUsuario/:id_usuarios', new usuariosController().excluirUsuario)
 
+// Leitores
+router.post('/CriarLeitores', new leitoresController().criarLeitor)
+router.get('/ListarLeitores', new leitoresController().listarLeitores)
+router.get('/BuscarLeitor/CPF/:cpf', new leitoresController().buscarLeitorPorCPF)
+router.get('/BuscarLeitor/:id_leitores', new leitoresController().buscarLeitorPorId)
+router.delete('/RemoverLeitor/:id_leitores', new leitoresController().excluirLeitor)
+router.put('/EditarLeitores/:id_leitores', new leitoresController().editarLeitor)
 
+// Emprestimo
+router.post('/CriarEmprestimos', new emprestimosController().criarEmprestimo)
+router.get('/ListarEmprestimo', new emprestimosController().listarEmprestimos)
+router.get('/BuscarEmprestimo/:id_emprestimo', new emprestimosController().buscarEmprestimoPorId)
+router.get('/ListarEmprestimos/Ativos', new emprestimosController().listarEmprestimosAtivos)
+router.get('/ListarEmprestimosAtrasados', new emprestimosController().listarEmprestimosAtrasados)
+router.patch('/DevolverLivro/:id_emprestimo', new emprestimosController().devolverLivro)
+router.get('/CalcularMulta/:id_emprestimo', new emprestimosController().calcularMulta)
+router.patch('/CancelarEmprestimo/:id_emprestimo', new emprestimosController().cancelarEmprestimo)
+
+//Dashboard
+router.get('/Dashboard', new dashboardController().obterEstatisticas)
 
 export default router

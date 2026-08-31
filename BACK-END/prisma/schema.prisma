@@ -75,6 +75,7 @@ model Emprestimo {
   data_prevista   DateTime? @db.Date
   data_devolucao  DateTime @db.Date
   status          String   @db.VarChar(100)
+  multa           Decimal @default(0) @db.Decimal(10, 2)
 
   id_leitores Int
   id_livros   Int
