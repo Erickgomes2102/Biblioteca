@@ -1,5 +1,5 @@
 import React from "react";
-import { cores, fontDisplay } from "../../styles/tema";
+import { cores, fontDisplay } from "../../empréstimos/styles/tema";
 
 export default function Cabecalho({ titulo, subtitulo, acao }) {
   return (

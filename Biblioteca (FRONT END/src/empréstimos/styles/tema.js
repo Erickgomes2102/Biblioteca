@@ -13,25 +13,28 @@ export const cores = {
 };
 
 export const fontDisplay = "'Source Serif 4', Georgia, serif";
-export const fontUI = "'Inter', system-ui, sans-serif";
+export const fontUI = "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 export const inputStyle = {
   width: "100%",
-  padding: "9px 12px",
+  padding: "12px 14px",
   border: `1px solid ${cores.linha}`,
-  borderRadius: 4,
-  fontSize: 14,
+  borderRadius: 6,
+  fontSize: 15,
   fontFamily: fontUI,
   background: "#fff",
   boxSizing: "border-box",
   color: cores.tinta,
+  outline: "none",
 };
 
 export const botaoIcone = {
   background: "none",
   border: "none",
   cursor: "pointer",
-  padding: 6,
+  padding: 8,
   display: "flex",
   alignItems: "center",
+  justifyContent: "center",
+  borderRadius: 6,
 };

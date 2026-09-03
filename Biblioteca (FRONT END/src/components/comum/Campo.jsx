@@ -1,5 +1,5 @@
 import React from "react";
-import { cores } from "../../styles/tema";
+import { cores } from "../../empréstimos/styles/tema";
 
 export default function Campo({ label, children }) {
   return (

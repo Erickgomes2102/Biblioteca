@@ -1,6 +1,6 @@
 import React from "react";
 import { Search } from "lucide-react";
-import { cores, inputStyle } from "../../styles/tema";
+import { cores, inputStyle } from "../../empréstimos/styles/tema";
 
 export default function BarraBusca({ valor, onChange, placeholder }) {
   return (

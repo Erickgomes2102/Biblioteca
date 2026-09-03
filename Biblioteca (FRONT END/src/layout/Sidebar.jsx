@@ -1,6 +1,6 @@
 import React from "react";
 import { BookOpen, Users, Repeat, LayoutDashboard } from "lucide-react";
-import { cores, fontDisplay } from "../../styles/tema";
+import { cores, fontDisplay } from "../empréstimos/styles/tema"
 
 const ITENS = [
   { id: "dashboard", label: "Painel", icone: LayoutDashboard },

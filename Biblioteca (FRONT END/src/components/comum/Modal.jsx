@@ -1,6 +1,6 @@
 import React from "react";
 import { X } from "lucide-react";
-import { cores, fontDisplay, botaoIcone } from "../../styles/tema";
+import { cores, fontDisplay, botaoIcone } from "../../empréstimos/styles/tema";
 
 export default function Modal({ titulo, children, onFechar }) {
   return (

@@ -1,34 +1,109 @@
-import React, { useState } from "react";
-import { cores, fontUI } from "./styles/tema";
-import { LIVROS_INICIAIS, LEITORES_INICIAIS, EMPRESTIMOS_INICIAIS } from "./data/dadosIniciais";
-import Sidebar from "./components/layout/Sidebar";
-import Dashboard from "./components/dashboard/Dashboard";
-import Livros from "./components/livros/Livros";
-import Leitores from "./components/leitores/Leitores";
-import Emprestimos from "./components/emprestimos/Emprestimos";
+import React, { useEffect, useState } from "react";
+import api from "./services/api";
+import { cores, fontUI } from "./empréstimos/styles/tema";
 
-export default function BibliotecaDigital() {
+import Sidebar from "./layout/Sidebar";
+import Dashboard from "./dashboard/Dashboard";
+import Livros from "./livros/Livros";
+import Leitores from "./leitores/Leitores";
+import Emprestimos from "./emprestimos/Emprestimos";
+
+export default function App() {
   const [aba, setAba] = useState("dashboard");
 
-  const [livros, setLivros] = useState(LIVROS_INICIAIS);
-  const [leitores, setLeitores] = useState(LEITORES_INICIAIS);
-  const [emprestimos, setEmprestimos] = useState(EMPRESTIMOS_INICIAIS);
+  const [livros, setLivros] = useState([]);
+  const [leitores, setLeitores] = useState([]);
+  const [emprestimos, setEmprestimos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
 
-  return (
-    <div style={{ display: "flex", minHeight: 600, background: cores.fundo, fontFamily: fontUI, borderRadius: 12, overflow: "hidden", border: `1px solid ${cores.linha}` }}>
-      <Sidebar aba={aba} setAba={setAba} />
-      <div style={{ flex: 1, padding: "28px 32px", overflow: "auto" }}>
-        {aba === "dashboard" && <Dashboard livros={livros} leitores={leitores} emprestimos={emprestimos} />}
-        {aba === "livros" && <Livros livros={livros} setLivros={setLivros} />}
-        {aba === "leitores" && <Leitores leitores={leitores} setLeitores={setLeitores} />}
-        {aba === "emprestimos" && (
-          <Emprestimos
-            livros={livros} setLivros={setLivros}
-            leitores={leitores}
-            emprestimos={emprestimos} setEmprestimos={setEmprestimos}
-          />
-        )}
-      </div>
-    </div>
-  );
+  useEffect(() => {
+    const carregarDados = async () => {
+      try {
+        const [
+          respostaLivros,
+          respostaLeitores,
+          respostaEmprestimos,
+          respostaCategorias,
+          respostaUsuarios
+        ] = await Promise.all([
+          api.get("/ListarLivros"),
+          api.get("/ListarLeitores"),
+          api.get("/ListarEmprestimo"),
+          api.get("/ListarCategorias"),
+          api.get("/ListarUsuarios")
+        ]);
+
+        setLivros(respostaLivros.data);
+        setLeitores(respostaLeitores.data);
+        setEmprestimos(respostaEmprestimos.data);
+        setCategorias(respostaCategorias.data);
+        setUsuarios(respostaUsuarios.data);
+      } catch (error) {
+        console.log(error.response?.data || error.message);
+      }
+    };
+
+    carregarDados();
+  }, []);
+return (
+  <div
+    style={{
+      display: "flex",
+      width: "100%",
+      minHeight: "100vh",
+      background: cores.fundo,
+      fontFamily: fontUI,
+      overflow: "hidden",
+    }}
+  >
+    <Sidebar aba={aba} setAba={setAba} />
+
+    <main
+      style={{
+        flex: 1,
+        minWidth: 0,
+        minHeight: "100vh",
+        padding: "40px 48px",
+        overflowY: "auto",
+        overflowX: "hidden",
+      }}
+    >
+      {aba === "dashboard" && (
+        <Dashboard
+          livros={livros}
+          leitores={leitores}
+          emprestimos={emprestimos}
+        />
+      )}
+
+      {aba === "livros" && (
+        <Livros
+          livros={livros}
+          setLivros={setLivros}
+          categorias={categorias}
+        />
+      )}
+
+      {aba === "leitores" && (
+        <Leitores
+          leitores={leitores}
+          setLeitores={setLeitores}
+          usuarios={usuarios}
+        />
+      )}
+
+      {aba === "emprestimos" && (
+        <Emprestimos
+          livros={livros}
+          setLivros={setLivros}
+          leitores={leitores}
+          emprestimos={emprestimos}
+          setEmprestimos={setEmprestimos}
+          usuarios={usuarios}
+        />
+      )}
+    </main>
+  </div>
+);
 }

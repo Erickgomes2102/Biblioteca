@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { cores, inputStyle } from "../../styles/tema";
-import Modal from "../comum/Modal";
-import Campo from "../comum/Campo";
-import BotaoPrincipal from "../comum/BotaoPrincipal";
+import { cores, inputStyle } from "../empréstimos/styles/tema";
+import Modal from "../components/comum/Modal";
+import Campo from "../components/comum/Campo";
+import BotaoPrincipal from "../components/comum/BotaoPrincipal";
 
 export default function ModalEmprestimo({ onFechar, onSalvar, livros, leitores }) {
   const [livroId, setLivroId] = useState("");
