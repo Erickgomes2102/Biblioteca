@@ -30,6 +30,7 @@ model Livro {
   editora       String   @db.VarChar(150)
   ano           Int
   quantidade    Int      @default(0)
+  capa String? @db.VarChar(500)
 
   id_categorias Int
 
