@@ -49,7 +49,7 @@ export default function ModalLivro({
     ) {
       return;
     }
-
+  //VERSÃO ATUALIZADA
     try {
 
       setBuscandoISBN(true);
