@@ -1,8 +1,16 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
 interface Payload {
-    sub: string
+    sub: string;
+}
+
+declare global {
+    namespace Express {
+        interface Request {
+            usuarioId: string;
+        }
+    }
 }
 
 export function authMiddleware(
@@ -10,32 +18,37 @@ export function authMiddleware(
     res: Response,
     next: NextFunction
 ) {
-    const authHeader = req.headers.authorization
+    const authHeader = req.headers.authorization;
 
-    if (!authHeader) { return res.status(401).json({
-        Dados: 'Token não existe'
-    })
-}
+    if (!authHeader) {
+        return res.status(401).json({
+            Dados: "Token não existe"
+        });
+    }
 
-    const [, token] = authHeader.split(" ")
+    const [, token] = authHeader.split(" ");
 
     if (!token) {
-        return res.status(401).json({ Dados: 'Token Inválido' })
-    } 
+        return res.status(401).json({
+            Dados: "Token Inválido"
+        });
+    }
 
     try {
-    const { sub } = jwt.verify( token, process.env.JWT_SECRETO as string) as Payload
+        const { sub } = jwt.verify(
+            token,
+            process.env.JWT_SECRETO as string
+        ) as Payload;
 
-    req.usuarioId = sub 
+        req.usuarioId = sub;
 
-    return next()
+        return next();
+
     } catch (err) {
-        console.log("Erro ao validar token:", err)
+        console.log("Erro ao validar token:", err);
 
-
-            return res.status(401).json({
+        return res.status(401).json({
             Dados: "Token Inválido"
-        })
-        
+        });
     }
 }

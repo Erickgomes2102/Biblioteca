@@ -18,7 +18,7 @@ class LogarUsuariosServices {
         if (!emailExiste)
             throw new Error('Email Incorreto')
         const senhaCrypt = await compare(senha, emailExiste.senha)
-        if (!senhaCrypt) throw new Error('senha Incorreta')
+        if (!senhaCrypt) throw new Error('Senha Incorreta')
 
         const token = sign({
             id: emailExiste.id_usuarios,
