@@ -22,11 +22,6 @@ export default function App() {
   const [categorias, setCategorias] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
 
-  function logout() {
-    localStorage.removeItem("token");
-    setLogado(false);
-  }
-
   useEffect(() => {
 
     if (!logado) {
@@ -44,11 +39,13 @@ export default function App() {
           respostaCategorias,
           respostaUsuarios
         ] = await Promise.all([
+
           api.get("/ListarLivros"),
           api.get("/ListarLeitores"),
           api.get("/ListarEmprestimo"),
           api.get("/ListarCategorias"),
           api.get("/ListarUsuarios")
+
         ]);
 
         setLivros(respostaLivros.data);
@@ -71,91 +68,105 @@ export default function App() {
 
   }, [logado]);
 
+  function logout() {
 
-  if (!logado) {
+    localStorage.removeItem("token");
 
-    return (
-      <Login
-        onLogin={() => setLogado(true)}
-      />
-    );
+    setLogado(false);
+
+    setAba("dashboard");
 
   }
-
 
   return (
 
     <div
       style={{
-        display: "flex",
         width: "100%",
-        minHeight: "100vh",
-        background: cores.fundo,
-        fontFamily: fontUI,
+        height: "100vh",
+        position: "relative",
         overflow: "hidden",
+        background: cores.fundo,
+        fontFamily: fontUI
       }}
     >
 
-      <Sidebar
-        aba={aba}
-        setAba={setAba}
-        logout={logout}
-      />
+      {/* SISTEMA */}
 
-
-      <main
+      <div
+        className={!logado ? "sistema-bloqueado" : ""}
         style={{
-          flex: 1,
-          minWidth: 0,
-          minHeight: "100vh",
-          padding: "40px 48px",
-          overflowY: "auto",
-          overflowX: "hidden",
+          display: "flex",
+          width: "100%",
+          height: "100vh",
+          background: cores.fundo
         }}
       >
 
-        {aba === "dashboard" && (
-          <Dashboard
-            livros={livros}
-            leitores={leitores}
-            emprestimos={emprestimos}
-          />
-        )}
+        <Sidebar
+          aba={aba}
+          setAba={setAba}
+          onLogout={logout}
+        />
 
+        <main
+          style={{
+            flex: 1,
+            minWidth: 0,
+            height: "100vh",
+            padding: "40px 48px",
+            overflowY: "auto",
+            overflowX: "hidden"
+          }}
+        >
 
-        {aba === "livros" && (
-          <Livros
-            livros={livros}
-            setLivros={setLivros}
-            categorias={categorias}
-          />
-        )}
+          {aba === "dashboard" && (
+            <Dashboard
+              livros={livros}
+              leitores={leitores}
+              emprestimos={emprestimos}
+            />
+          )}
 
+          {aba === "livros" && (
+            <Livros
+              livros={livros}
+              setLivros={setLivros}
+              categorias={categorias}
+            />
+          )}
 
-        {aba === "leitores" && (
-          <Leitores
-            leitores={leitores}
-            setLeitores={setLeitores}
-            usuarios={usuarios}
-          />
-        )}
+          {aba === "leitores" && (
+            <Leitores
+              leitores={leitores}
+              setLeitores={setLeitores}
+              usuarios={usuarios}
+            />
+          )}
 
+          {aba === "emprestimos" && (
+            <Emprestimos
+              livros={livros}
+              setLivros={setLivros}
+              leitores={leitores}
+              emprestimos={emprestimos}
+              setEmprestimos={setEmprestimos}
+              usuarios={usuarios}
+            />
+          )}
 
-        {aba === "emprestimos" && (
-          <Emprestimos
-            livros={livros}
-            setLivros={setLivros}
-            leitores={leitores}
-            emprestimos={emprestimos}
-            setEmprestimos={setEmprestimos}
-            usuarios={usuarios}
-          />
-        )}
+        </main>
 
-      </main>
+      </div>
+
+      {/* LOGIN */}
+
+      {!logado && (
+        <Login
+          onLogin={() => setLogado(true)}
+        />
+      )}
 
     </div>
-
   );
-
 }

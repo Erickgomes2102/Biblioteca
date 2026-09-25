@@ -1,18 +1,43 @@
 import React from "react";
-import { BookOpen, Users, Repeat, LayoutDashboard } from "lucide-react";
-import { cores, fontDisplay } from "../empréstimos/styles/tema"
+import {
+  BookOpen,
+  Users,
+  Repeat,
+  LayoutDashboard,
+  LogOut
+} from "lucide-react";
+
+import { cores, fontDisplay } from "../empréstimos/styles/tema";
 
 const ITENS = [
-  { id: "dashboard", label: "Painel", icone: LayoutDashboard },
-  { id: "livros", label: "Livros", icone: BookOpen },
-  { id: "leitores", label: "Leitores", icone: Users },
-  { id: "emprestimos", label: "Empréstimos", icone: Repeat },
+  {
+    id: "dashboard",
+    label: "Painel",
+    icone: LayoutDashboard
+  },
+  {
+    id: "livros",
+    label: "Livros",
+    icone: BookOpen
+  },
+  {
+    id: "leitores",
+    label: "Leitores",
+    icone: Users
+  },
+  {
+    id: "emprestimos",
+    label: "Empréstimos",
+    icone: Repeat
+  },
 ];
 
-export default function Sidebar({ aba, setAba, logout }) {
-
+export default function Sidebar({
+  aba,
+  setAba,
+  onLogout
+}) {
   return (
-
     <div
       style={{
         width: 210,
@@ -24,7 +49,7 @@ export default function Sidebar({ aba, setAba, logout }) {
       }}
     >
 
-      {/* CABEÇALHO */}
+      {/* LOGO */}
 
       <div
         style={{
@@ -35,7 +60,6 @@ export default function Sidebar({ aba, setAba, logout }) {
           borderBottom: "1px solid #3B4C3B"
         }}
       >
-
         <BookOpen
           size={20}
           color={cores.latao}
@@ -51,7 +75,6 @@ export default function Sidebar({ aba, setAba, logout }) {
         >
           Biblioteca
         </span>
-
       </div>
 
 
@@ -70,9 +93,9 @@ export default function Sidebar({ aba, setAba, logout }) {
           const ativo = aba === it.id;
 
           return (
-
             <button
               key={it.id}
+              type="button"
               onClick={() => setAba(it.id)}
               style={{
                 display: "flex",
@@ -97,48 +120,48 @@ export default function Sidebar({ aba, setAba, logout }) {
                 fontWeight: ativo
                   ? 600
                   : 500,
-                textAlign: "left",
+                textAlign: "left"
               }}
             >
-
               <Icone size={16} />
-
               {it.label}
-
             </button>
-
           );
-
         })}
 
       </div>
 
 
-      {/* LOGOUT */}
+      {/* SAIR */}
 
       <div
         style={{
-          padding: "12px 10px 0",
+          padding: "12px 10px",
           borderTop: "1px solid #3B4C3B"
         }}
       >
 
         <button
-          onClick={logout}
+          type="button"
+          onClick={onLogout}
           style={{
             display: "flex",
             alignItems: "center",
+            gap: 10,
             width: "100%",
-            padding: "10px 15px",
+            padding: "10px 12px",
             background: "transparent",
             border: "none",
             borderRadius: 3,
             color: "#B9C4B4",
             fontSize: 13.5,
-            cursor: "pointer",
+            fontWeight: 500,
             textAlign: "left",
+            cursor: "pointer"
           }}
         >
+
+          <LogOut size={16} />
 
           Sair
 
@@ -147,7 +170,5 @@ export default function Sidebar({ aba, setAba, logout }) {
       </div>
 
     </div>
-
   );
-
 }

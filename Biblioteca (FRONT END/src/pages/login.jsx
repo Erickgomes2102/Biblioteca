@@ -1,276 +1,304 @@
-import React, {useState} from "react";
-
+import React, { useState } from "react";
 import api from "../services/api";
 
 export default function Login({ onLogin }) {
 
-    const [email, setEmail] = useState("");
-    const [senha, setSenha] = useState("");
-    const [erro, setErro] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
 
-    const [criando, setCriando] = useState(false);
+  const [nome, setNome] = useState("");
+  const [senhaConfirmacao, setSenhaConfirmacao] = useState("");
 
-    const [nome, setNome] = useState("");
-    const [tipo, setTipo] = useState("");
+  const [erro, setErro] = useState("");
+  const [criando, setCriando] = useState(false);
 
+  async function entrar() {
 
-    const login = async () => {
+    setErro("");
 
-        try {
-
-            setErro("");
-
-            const resposta = await api.post("/login", {
-                email,
-                senha
-            });
-
-            const token = resposta.data.token;
-
-            localStorage.setItem("token", token);
-
-            onLogin();
-
-        } catch (err) {
-
-            console.log(
-                err.response?.data || err.message
-            );
-
-            setErro(
-                err.response?.data?.error ||
-                "E-mail ou senha inválidos"
-            );
-        }
-    };
-
-
-    const cadastrar = async () => {
-
-        try {
-
-            setErro("");
-
-            await api.post("/CadastrarUsuario", {
-                nome,
-                email,
-                senha,
-                tipo
-            });
-
-            setCriando(false);
-
-            setNome("");
-            setEmail("");
-            setSenha("");
-            setTipo("");
-
-        } catch (err) {
-
-            console.log(
-                err.response?.data || err.message
-            );
-
-            setErro(
-                err.response?.data?.error ||
-                "Erro ao criar usuário"
-            );
-        }
-    };
-
-
-    if (criando) {
-
-        return (
-            <div className="login-box">
-
-                <div className="login-logo">
-                    📚
-                </div>
-
-                <h1 className="login-titulo">
-                    Criar usuário
-                </h1>
-
-                <p className="login-subtitulo">
-                    Cadastre uma nova conta para acessar a biblioteca.
-                </p>
-
-
-                <div className="login-campo">
-
-                    <label>
-                        Nome
-                    </label>
-
-                    <input
-                        value={nome}
-                        onChange={(e) => setNome(e.target.value)}
-                        placeholder="Nome completo"
-                        type="text"
-                    />
-
-                </div>
-
-
-                <div className="login-campo">
-
-                    <label>
-                        E-mail
-                    </label>
-
-                    <input
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="seu@email.com"
-                        type="email"
-                    />
-
-                </div>
-
-
-                <div className="login-campo">
-
-                    <label>
-                        Senha
-                    </label>
-
-                    <input
-                        value={senha}
-                        onChange={(e) => setSenha(e.target.value)}
-                        placeholder="Digite sua senha"
-                        type="password"
-                    />
-
-                </div>
-
-
-                <div className="login-campo">
-
-                    <label>
-                        Tipo de usuário
-                    </label>
-
-                    <input
-                        value={tipo}
-                        onChange={(e) => setTipo(e.target.value)}
-                        placeholder="Ex: Administrador"
-                        type="text"
-                    />
-
-                </div>
-
-
-                {erro && (
-                    <p className="login-erro">
-                        {erro}
-                    </p>
-                )}
-
-
-                <button
-                    className="login-botao"
-                    onClick={cadastrar}
-                >
-                    Criar usuário
-                </button>
-
-
-                <button
-                    className="login-voltar"
-                    onClick={() => {
-                        setCriando(false);
-                        setErro("");
-                    }}
-                >
-                    Voltar para login
-                </button>
-
-            </div>
-        );
+    if (!email.trim() || !senha.trim()) {
+      setErro("Preencha o e-mail e a senha.");
+      return;
     }
 
+    try {
 
-    return (
+      const resposta = await api.post("/login", {
+        email: email.trim(),
+        senha
+      });
 
-        <div className="login-box">
+      localStorage.setItem(
+        "token",
+        resposta.data.token
+      );
 
-            <div className="login-logo">
-                📚
-            </div>
+      onLogin();
 
+    } catch (error) {
 
+      console.log(
+        error.response?.data || error.message
+      );
+
+      setErro(
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "E-mail ou senha incorretos."
+      );
+
+    }
+  }
+
+  async function criarUsuario() {
+
+    setErro("");
+
+    if (
+      !nome.trim() ||
+      !email.trim() ||
+      !senha.trim() ||
+      !senhaConfirmacao.trim()
+    ) {
+      setErro("Preencha todos os campos.");
+      return;
+    }
+
+    if (senha !== senhaConfirmacao) {
+      setErro("As senhas não coincidem.");
+      return;
+    }
+
+    try {
+
+      await api.post("/CriarUsuario", {
+        nome: nome.trim(),
+        email: email.trim(),
+        senha
+      });
+
+      setCriando(false);
+
+      setNome("");
+      setSenhaConfirmacao("");
+
+      setSenha("");
+
+      setErro("Usuário criado com sucesso. Faça login.");
+
+    } catch (error) {
+
+      console.log(
+        error.response?.data || error.message
+      );
+
+      setErro(
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "Não foi possível criar o usuário."
+      );
+
+    }
+  }
+
+  return (
+
+    <div className="login-overlay">
+
+      <div className="login-box">
+
+        <div className="login-logo">
+          📚
+        </div>
+
+        {!criando ? (
+
+          <>
             <h1 className="login-titulo">
-                Biblioteca
+              Biblioteca
             </h1>
 
             <p className="login-subtitulo">
-                Entre para acessar o sistema.
+              Entre para acessar o sistema.
             </p>
 
-
             <div className="login-campo">
 
-                <label>
-                    E-mail
-                </label>
+              <label>
+                E-mail
+              </label>
 
-                <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="seu@email.com"
-                    type="email"
-                />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                autoComplete="email"
+              />
 
             </div>
 
-
             <div className="login-campo">
 
-                <label>
-                    Senha
-                </label>
+              <label>
+                Senha
+              </label>
 
-                <input
-                    value={senha}
-                    onChange={(e) => setSenha(e.target.value)}
-                    placeholder="Digite sua senha"
-                    type="password"
-                />
+              <input
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                placeholder="Digite sua senha"
+                autoComplete="current-password"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    entrar();
+                  }
+                }}
+              />
 
             </div>
-
 
             {erro && (
-                <p className="login-erro">
-                    {erro}
-                </p>
+              <div className="login-erro">
+                {erro}
+              </div>
             )}
 
-
             <button
-                className="login-botao"
-                onClick={login}
+              type="button"
+              className="login-botao"
+              onClick={entrar}
             >
-                Entrar
+              Entrar
             </button>
-
 
             <div className="login-divisor">
-                <span>ou</span>
+              <span>ou</span>
             </div>
 
-
             <button
-                className="login-secundario"
-                onClick={() => {
-                    setCriando(true);
-                    setErro("");
-                }}
+              type="button"
+              className="login-secundario"
+              onClick={() => {
+                setErro("");
+                setCriando(true);
+              }}
             >
-                Criar usuário
+              Criar usuário
             </button>
 
-        </div>
-    );
+          </>
+
+        ) : (
+
+          <>
+            <h1 className="login-titulo">
+              Criar usuário
+            </h1>
+
+            <p className="login-subtitulo">
+              Cadastre uma conta para acessar a biblioteca.
+            </p>
+
+            <div className="login-campo">
+
+              <label>
+                Nome
+              </label>
+
+              <input
+                type="text"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Seu nome"
+                autoComplete="name"
+              />
+
+            </div>
+
+            <div className="login-campo">
+
+              <label>
+                E-mail
+              </label>
+
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                autoComplete="email"
+              />
+
+            </div>
+
+            <div className="login-campo">
+
+              <label>
+                Senha
+              </label>
+
+              <input
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                placeholder="Crie uma senha"
+                autoComplete="new-password"
+              />
+
+            </div>
+
+            <div className="login-campo">
+
+              <label>
+                Confirmar senha
+              </label>
+
+              <input
+                type="password"
+                value={senhaConfirmacao}
+                onChange={(e) =>
+                  setSenhaConfirmacao(e.target.value)
+                }
+                placeholder="Repita sua senha"
+                autoComplete="new-password"
+              />
+
+            </div>
+
+            {erro && (
+              <div className="login-erro">
+                {erro}
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="login-botao"
+              onClick={criarUsuario}
+            >
+              Criar conta
+            </button>
+
+            <button
+              type="button"
+              className="login-voltar"
+              onClick={() => {
+                setErro("");
+                setCriando(false);
+              }}
+            >
+              ← Voltar para login
+            </button>
+
+          </>
+
+        )}
+
+      </div>
+
+    </div>
+
+  );
 }

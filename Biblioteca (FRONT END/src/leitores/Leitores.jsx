@@ -11,44 +11,56 @@ import LinhaItem from "../components/comum/LinhaItem";
 import ModalLeitor from "./ModalLeitor";
 
 export default function Leitores({
-  leitores,
+  leitores = [],
   setLeitores,
-  usuarios
+  usuarios = []
 }) {
   const [busca, setBusca] = useState("");
   const [novo, setNovo] = useState(null);
 
-  const filtrados = leitores.filter((leitor) =>
-    (
-      leitor.nome +
-      leitor.cpf +
-      leitor.email +
-      leitor.telefone
-    )
-      .toLowerCase()
-      .includes(busca.toLowerCase())
-  );
+  const listaLeitores = Array.isArray(leitores)
+    ? leitores
+    : [];
 
-  const adicionar = async (dados) => {
-    try {
-      const resposta = await api.post(
-        "/CriarLeitores",
-        dados
-      );
+  const listaUsuarios = Array.isArray(usuarios)
+    ? usuarios
+    : [];
 
-      setLeitores([
-        ...leitores,
-        resposta.data
-      ]);
+  const filtrados = listaLeitores.filter((leitor) => {
+    const texto = [
+      leitor?.nome,
+      leitor?.cpf,
+      leitor?.email,
+      leitor?.telefone
+    ]
+      .filter((valor) => valor !== null && valor !== undefined)
+      .map((valor) => String(valor))
+      .join(" ")
+      .toLowerCase();
 
-      setNovo(null);
-    } catch (error) {
-      console.log(
-        error.response?.data || error.message
-      );
-    }
-  };
+    return texto.includes(busca.toLowerCase());
+  });
+const adicionar = async (dados) => {
+  try {
+    await api.post(
+      "/CriarLeitores",
+      dados
+    );
 
+    const resposta = await api.get(
+      "/ListarLeitores"
+    );
+
+    setLeitores(resposta.data);
+
+    setNovo(null);
+
+  } catch (error) {
+    console.log(
+      error.response?.data || error.message
+    );
+  }
+};
   const remover = async (id_leitores) => {
     try {
       await api.delete(
@@ -56,11 +68,12 @@ export default function Leitores({
       );
 
       setLeitores(
-        leitores.filter(
+        listaLeitores.filter(
           (leitor) =>
             leitor.id_leitores !== id_leitores
         )
       );
+
     } catch (error) {
       console.log(
         error.response?.data || error.message
@@ -70,9 +83,10 @@ export default function Leitores({
 
   return (
     <div>
+
       <Cabecalho
         titulo="Leitores"
-        subtitulo={`${leitores.length} pessoas cadastradas`}
+        subtitulo={`${listaLeitores.length} pessoas cadastradas`}
         acao={
           <BotaoPrincipal
             onClick={() => setNovo({})}
@@ -98,26 +112,44 @@ export default function Leitores({
           padding: "4px 20px"
         }}
       >
-        {filtrados.map((leitor) => (
-          <LinhaItem
-            key={leitor.id_leitores}
-            titulo={leitor.nome}
-            sub={`${leitor.email} · ${leitor.telefone}`}
-            acao={
-              <button
-                onClick={() =>
-                  remover(leitor.id_leitores)
-                }
-                style={botaoIcone}
-              >
-                <Trash2
-                  size={14}
-                  color={cores.tintaSuave}
-                />
-              </button>
-            }
-          />
-        ))}
+
+        {filtrados.map((leitor) => {
+
+          const nome =
+            leitor?.nome ||
+            "Nome não informado";
+
+          const email =
+            leitor?.email ||
+            "E-mail não informado";
+
+          const telefone =
+            leitor?.telefone ||
+            "Telefone não informado";
+
+          return (
+            <LinhaItem
+              key={leitor.id_leitores}
+              titulo={nome}
+              sub={`${email} · ${telefone}`}
+              acao={
+                <button
+                  type="button"
+                  onClick={() =>
+                    remover(leitor.id_leitores)
+                  }
+                  style={botaoIcone}
+                  title="Excluir leitor"
+                >
+                  <Trash2
+                    size={14}
+                    color={cores.tintaSuave}
+                  />
+                </button>
+              }
+            />
+          );
+        })}
 
         {filtrados.length === 0 && (
           <p
@@ -130,15 +162,17 @@ export default function Leitores({
             Nenhum leitor encontrado.
           </p>
         )}
+
       </div>
 
       {novo !== null && (
         <ModalLeitor
           onFechar={() => setNovo(null)}
           onSalvar={adicionar}
-          usuarios={usuarios}
+          usuarios={listaUsuarios}
         />
       )}
+
     </div>
   );
 }

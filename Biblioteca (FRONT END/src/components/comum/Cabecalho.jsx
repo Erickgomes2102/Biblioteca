@@ -11,4 +11,4 @@ export default function Cabecalho({ titulo, subtitulo, acao }) {
       {acao}
     </div>
   );
-}a
+}

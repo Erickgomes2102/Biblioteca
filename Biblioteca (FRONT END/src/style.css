@@ -1,33 +1,3 @@
-
-html {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
-
-body {
-  width: 100%;
-  height: 100%;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden;
-  background: #F3EEE1;
-}
-
-#root {
-  width: 100%;
-  height: 100%;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden;
-}
-
-* {
-  box-sizing: border-box;
-}
-
 :root {
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #26352A;
@@ -36,6 +6,38 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  overflow: hidden;
+}
+
+body {
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #F3EEE1;
+}
+
+#root {
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
 }
 
 button,
@@ -58,3 +60,371 @@ p {
 }
 
 
+/* =========================================================
+   SISTEMA ATRÁS DO LOGIN
+   ========================================================= */
+
+.sistema-bloqueado {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+
+  filter:
+    grayscale(0.8)
+    blur(5px);
+
+  transform: scale(1.02);
+
+  opacity: 0.65;
+
+  pointer-events: none;
+  user-select: none;
+
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   FUNDO DO LOGIN
+   ========================================================= */
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+
+  width: 100vw;
+  height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(30, 38, 32, 0.48);
+
+  z-index: 9999;
+}
+
+
+/* =========================================================
+   JANELA DE LOGIN
+   ========================================================= */
+
+.login-box {
+  position: relative;
+
+  width: 410px;
+  max-width: calc(100vw - 40px);
+
+  padding: 36px;
+
+  background: #FFFDF7;
+
+  border: 1px solid #DFD6BF;
+  border-radius: 10px;
+
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.28);
+
+  z-index: 10000;
+
+  animation: loginEntrar 0.2s ease-out;
+}
+
+
+/* =========================================================
+   ANIMAÇÃO
+   ========================================================= */
+
+@keyframes loginEntrar {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+/* =========================================================
+   LOGO
+   ========================================================= */
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 44px;
+  height: 44px;
+
+  margin-bottom: 18px;
+
+  border-radius: 8px;
+
+  background: #26352A;
+  color: #A9791F;
+}
+
+
+/* =========================================================
+   TÍTULO
+   ========================================================= */
+
+.login-titulo {
+  color: #26352A;
+
+  font-family: "Source Serif 4", Georgia, serif;
+
+  font-size: 29px;
+  font-weight: 600;
+
+  line-height: 1.2;
+
+  margin-bottom: 7px;
+}
+
+
+/* =========================================================
+   SUBTÍTULO
+   ========================================================= */
+
+.login-subtitulo {
+  color: #5B6B5A;
+
+  font-size: 13.5px;
+  line-height: 1.5;
+
+  margin-bottom: 26px;
+}
+
+
+/* =========================================================
+   CAMPOS
+   ========================================================= */
+
+.login-campo {
+  margin-bottom: 16px;
+}
+
+.login-campo label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #26352A;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.login-campo input,
+.login-campo select {
+  display: block;
+
+  width: 100%;
+
+  padding: 11px 13px;
+
+  border: 1px solid #DFD6BF;
+  border-radius: 6px;
+
+  background: #FFFFFF;
+
+  color: #26352A;
+
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.login-campo input:focus,
+.login-campo select:focus {
+  border-color: #A9791F;
+
+  box-shadow:
+    0 0 0 3px rgba(169, 121, 31, 0.12);
+}
+
+
+/* =========================================================
+   ERRO
+   ========================================================= */
+
+.login-erro {
+  margin-bottom: 16px;
+
+  padding: 10px 12px;
+
+  border-radius: 6px;
+
+  background: #F4DCD6;
+
+  color: #A6402F;
+
+  border: 1px solid #E7BEB5;
+
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   BOTÃO PRINCIPAL
+   ========================================================= */
+
+.login-botao {
+  display: block;
+
+  width: 100%;
+
+  padding: 12px;
+
+  border: none;
+  border-radius: 6px;
+
+  background: #26352A;
+
+  color: #FFFFFF;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease;
+}
+
+.login-botao:hover {
+  background: #34483A;
+}
+
+.login-botao:active {
+  transform: translateY(1px);
+}
+
+
+/* =========================================================
+   BOTÃO CRIAR CONTA
+   ========================================================= */
+
+.login-secundario {
+  display: block;
+
+  width: 100%;
+
+  margin-top: 10px;
+
+  padding: 10px;
+
+  border: 1px solid #DFD6BF;
+  border-radius: 6px;
+
+  background: transparent;
+
+  color: #5B6B5A;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.login-secundario:hover {
+  background: #F3EEE1;
+
+  color: #26352A;
+
+  border-color: #CFC4A8;
+}
+
+
+/* =========================================================
+   DIVISOR
+   ========================================================= */
+
+.login-divisor {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  margin: 20px 0;
+}
+
+.login-divisor::before,
+.login-divisor::after {
+  content: "";
+
+  flex: 1;
+
+  height: 1px;
+
+  background: #DFD6BF;
+}
+
+.login-divisor span {
+  color: #8A9686;
+
+  font-size: 11px;
+}
+
+
+/* =========================================================
+   BOTÃO VOLTAR
+   ========================================================= */
+
+.login-voltar {
+  display: block;
+
+  width: 100%;
+
+  margin-top: 10px;
+
+  padding: 9px;
+
+  border: none;
+
+  background: transparent;
+
+  color: #5B6B5A;
+
+  font-size: 12.5px;
+}
+
+.login-voltar:hover {
+  color: #26352A;
+}
+
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .login-overlay {
+    padding: 16px;
+  }
+
+  .login-box {
+    width: 100%;
+    max-width: 410px;
+    padding: 28px 24px;
+  }
+
+  .login-titulo {
+    font-size: 26px;
+  }
+}
