@@ -71,10 +71,12 @@ export default function Login({ onLogin }) {
 
     try {
 
-      await api.post("/CriarUsuario", {
+      await api.post("/CadastrarUsuario", {
         nome: nome.trim(),
         email: email.trim(),
-        senha
+        senha,
+        tipo: "BIBLIOTECÁRIO"
+        
       });
 
       setCriando(false);
