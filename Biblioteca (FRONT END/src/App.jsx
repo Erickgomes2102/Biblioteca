@@ -135,7 +135,7 @@ export default function App() {
           aba={aba}
           setAba={setAba}
           onLogout={logout}
-          onExcluirConta={excluirContaLogada}
+          usuario={usuarioLogado}
         />
 
         <main
