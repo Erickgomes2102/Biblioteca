@@ -5,9 +5,11 @@ export default function Login({ onLogin }) {
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
 
   const [nome, setNome] = useState("");
   const [senhaConfirmacao, setSenhaConfirmacao] = useState("");
+  const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
 
   const [erro, setErro] = useState("");
   const [criando, setCriando] = useState(false);
@@ -33,7 +35,12 @@ export default function Login({ onLogin }) {
         resposta.data.token
       );
 
-      onLogin();
+      localStorage.setItem(
+        "usuario",
+        JSON.stringify(resposta.data.usuario)
+      );
+
+      onLogin(resposta.data.usuario);
 
     } catch (error) {
 
@@ -146,18 +153,40 @@ export default function Login({ onLogin }) {
                 Senha
               </label>
 
-              <input
-                type="password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                placeholder="Digite sua senha"
-                autoComplete="current-password"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    entrar();
-                  }
-                }}
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  type={mostrarSenha ? "text" : "password"}
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  placeholder="Digite sua senha"
+                  autoComplete="current-password"
+                  style={{ width: "100%", paddingRight: 36, boxSizing: "border-box" }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      entrar();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenha((v) => !v)}
+                  tabIndex={-1}
+                  style={{
+                    position: "absolute",
+                    right: 8,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 4,
+                    fontSize: 14,
+                  }}
+                  title={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {mostrarSenha ? "🙈" : "👁️"}
+                </button>
+              </div>
 
             </div>
 
@@ -241,13 +270,35 @@ export default function Login({ onLogin }) {
                 Senha
               </label>
 
-              <input
-                type="password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                placeholder="Crie uma senha"
-                autoComplete="new-password"
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  type={mostrarSenha ? "text" : "password"}
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  placeholder="Crie uma senha"
+                  autoComplete="new-password"
+                  style={{ width: "100%", paddingRight: 36, boxSizing: "border-box" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenha((v) => !v)}
+                  tabIndex={-1}
+                  style={{
+                    position: "absolute",
+                    right: 8,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 4,
+                    fontSize: 14,
+                  }}
+                  title={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {mostrarSenha ? "🙈" : "👁️"}
+                </button>
+              </div>
 
             </div>
 
@@ -257,15 +308,37 @@ export default function Login({ onLogin }) {
                 Confirmar senha
               </label>
 
-              <input
-                type="password"
-                value={senhaConfirmacao}
-                onChange={(e) =>
-                  setSenhaConfirmacao(e.target.value)
-                }
-                placeholder="Repita sua senha"
-                autoComplete="new-password"
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  type={mostrarConfirmacao ? "text" : "password"}
+                  value={senhaConfirmacao}
+                  onChange={(e) =>
+                    setSenhaConfirmacao(e.target.value)
+                  }
+                  placeholder="Repita sua senha"
+                  autoComplete="new-password"
+                  style={{ width: "100%", paddingRight: 36, boxSizing: "border-box" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarConfirmacao((v) => !v)}
+                  tabIndex={-1}
+                  style={{
+                    position: "absolute",
+                    right: 8,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 4,
+                    fontSize: 14,
+                  }}
+                  title={mostrarConfirmacao ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {mostrarConfirmacao ? "🙈" : "👁️"}
+                </button>
+              </div>
 
             </div>
 

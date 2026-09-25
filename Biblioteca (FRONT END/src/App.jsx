@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import api from "./services/api";
 import { cores, fontUI } from "./empréstimos/styles/tema";
 import Login from "./pages/login";
+import PerfilUsuario from "./pages/PerfilUsuario";
 import Sidebar from "./layout/Sidebar";
 import Dashboard from "./dashboard/Dashboard";
 import Livros from "./livros/Livros";
@@ -13,6 +14,11 @@ export default function App() {
   const [logado, setLogado] = useState(
     !!localStorage.getItem("token")
   );
+
+  const [usuarioLogado, setUsuarioLogado] = useState(() => {
+    const salvo = localStorage.getItem("usuario");
+    return salvo ? JSON.parse(salvo) : null;
+  });
 
   const [aba, setAba] = useState("dashboard");
 
@@ -69,13 +75,35 @@ export default function App() {
   }, [logado]);
 
   function logout() {
-
     localStorage.removeItem("token");
-
+    localStorage.removeItem("usuario");
     setLogado(false);
-
+    setUsuarioLogado(null);
     setAba("dashboard");
+  }
 
+  function atualizarUsuarioLogado(novoUsuario) {
+    setUsuarioLogado(novoUsuario);
+    localStorage.setItem("usuario", JSON.stringify(novoUsuario));
+  }
+
+  async function excluirContaLogada() {
+    const confirmar = window.confirm(
+      "Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita."
+    );
+    if (!confirmar || !usuarioLogado) return;
+
+    try {
+      await api.delete(`/ExcluirUsuario/${usuarioLogado.id}`);
+      logout();
+    } catch (error) {
+      console.log(error.response?.data || error.message);
+      alert(
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "Não foi possível excluir a conta."
+      );
+    }
   }
 
   return (
@@ -107,6 +135,7 @@ export default function App() {
           aba={aba}
           setAba={setAba}
           onLogout={logout}
+          onExcluirConta={excluirContaLogada}
         />
 
         <main
@@ -155,6 +184,14 @@ export default function App() {
             />
           )}
 
+          {aba === "perfil" && usuarioLogado && (
+            <PerfilUsuario
+              usuario={usuarioLogado}
+              onAtualizar={atualizarUsuarioLogado}
+              onExcluido={logout}
+            />
+          )}
+
         </main>
 
       </div>
@@ -163,7 +200,10 @@ export default function App() {
 
       {!logado && (
         <Login
-          onLogin={() => setLogado(true)}
+          onLogin={(usuario) => {
+            setUsuarioLogado(usuario);
+            setLogado(true);
+          }}
         />
       )}
 

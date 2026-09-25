@@ -32,7 +32,7 @@ router.get('/ListarUsuarios', authMiddleware, new usuariosController().listarUsu
 router.get('/BuscarUsuario/:id_usuarios', authMiddleware, new usuariosController().buscarUsuarioPorId)
 router.get('/BuscarUsuario/email/:email', authMiddleware, new usuariosController().buscarUsuarioPorEmail)
 router.put('/EditarUsuario/:id_usuarios', authMiddleware, new usuariosController().editarUsuario)
-router.delete('/ExcluirUsuario/:id_usuarios', authMiddleware, new usuariosController().excluirUsuario)
+router.delete('/ExcluirUsuario/:id_usuarios', new usuariosController().excluirUsuario)
 
 // Leitores
 router.post('/CriarLeitores', authMiddleware, new leitoresController().criarLeitor)
