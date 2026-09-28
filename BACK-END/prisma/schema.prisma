@@ -47,7 +47,7 @@ model Usuario {
   email       String @unique @db.VarChar(100)
   senha       String @db.VarChar(255)
   tipo        String @db.VarChar(255)
-
+  avatar String? @db.VarChar(500)
   leitores    Leitor[]
   emprestimos Emprestimo[]
 

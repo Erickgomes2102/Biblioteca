@@ -1,3 +1,12 @@
+{usuario.avatar?.startsWith("avatar_") ? (
+  emojiDoAvatar(usuario.avatar)
+) : (
+  <img
+    src={usuario.avatar}
+    alt="Avatar"
+  />
+)}
+
 export const AVATARES = [
   { codigo: "avatar_1", emoji: "🐱" },
   { codigo: "avatar_2", emoji: "🐶" },
