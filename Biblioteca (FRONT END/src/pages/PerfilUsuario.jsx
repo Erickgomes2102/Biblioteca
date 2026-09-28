@@ -1,11 +1,23 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import api from "../services/api";
 import { cores, fontUI, inputStyle } from "../empréstimos/styles/tema";
+import { AVATARES } from "../empréstimos/utils/avatares";
 import Cabecalho from "../components/comum/Cabecalho";
 import Campo from "../components/comum/Campo";
 import BotaoPrincipal from "../components/comum/BotaoPrincipal";
-import { AVATARES, emojiDoAvatar } from "../utils/avatares";
+import Avatar from "../components/comum/Avatar";
 
+function extrairAvatarDaResposta(data, avatarAnterior) {
+  if (!data) return avatarAnterior;
+  if (typeof data === "string") return data;
+  return (
+    data.avatar ||
+    data.url ||
+    data.avatarUrl ||
+    data.usuario?.avatar ||
+    avatarAnterior
+  );
+}
 
 export default function PerfilUsuario({ usuario, onAtualizar, onExcluido }) {
   const [nome, setNome] = useState(usuario?.nome || "");
@@ -14,10 +26,14 @@ export default function PerfilUsuario({ usuario, onAtualizar, onExcluido }) {
   const [novaSenha, setNovaSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [seletorAberto, setSeletorAberto] = useState(false);
+  const [enviandoFoto, setEnviandoFoto] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+
+  const inputArquivoRef = useRef(null);
+  const fotoEhPersonalizada = avatar && !avatar.startsWith("avatar_");
 
   const salvar = async (e) => {
     e.preventDefault();
@@ -29,7 +45,7 @@ export default function PerfilUsuario({ usuario, onAtualizar, onExcluido }) {
       return;
     }
 
-    const dados = { nome: nome.trim(), email: email.trim(), avatar };
+    const dados = { nome: nome.trim(), email: email.trim() };
     if (novaSenha.trim()) {
       dados.senha = novaSenha;
     }
@@ -37,7 +53,7 @@ export default function PerfilUsuario({ usuario, onAtualizar, onExcluido }) {
     setSalvando(true);
     try {
       const resposta = await api.put(`/EditarUsuario/${usuario.id}`, dados);
-      const usuarioAtualizado = resposta.data?.usuario || { ...usuario, ...dados };
+      const usuarioAtualizado = resposta.data?.usuario || { ...usuario, ...dados, avatar };
       onAtualizar(usuarioAtualizado);
       setNovaSenha("");
       setSucesso("Perfil atualizado com sucesso!");
@@ -46,6 +62,72 @@ export default function PerfilUsuario({ usuario, onAtualizar, onExcluido }) {
       setErro(error.response?.data?.error || error.response?.data?.message || "Não foi possível salvar.");
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const escolherArquivo = () => {
+    inputArquivoRef.current?.click();
+  };
+
+  const enviarFoto = async (e) => {
+    const arquivo = e.target.files?.[0];
+    e.target.value = ""; // permite escolher o mesmo arquivo de novo depois
+    if (!arquivo) return;
+
+    const tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
+    if (!tiposPermitidos.includes(arquivo.type)) {
+      setErro("Formato não permitido. Use JPG, PNG ou WEBP.");
+      return;
+    }
+    if (arquivo.size > 5 * 1024 * 1024) {
+      setErro("A imagem precisa ter até 5MB.");
+      return;
+    }
+
+    setErro("");
+    setSucesso("");
+    setEnviandoFoto(true);
+
+    const formData = new FormData();
+    formData.append("avatar", arquivo);
+
+    try {
+      const token = localStorage.getItem("token");
+      const resposta = await api.post("/MeuPerfil/Avatar", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      console.log("Resposta do upload de avatar:", resposta.data);
+
+      const novoAvatar = extrairAvatarDaResposta(resposta.data, avatar);
+      setAvatar(novoAvatar);
+      onAtualizar({ ...usuario, avatar: novoAvatar });
+      setSucesso("Foto atualizada com sucesso!");
+    } catch (error) {
+      console.log(error.response?.data || error.message);
+      setErro(error.response?.data?.error || error.response?.data?.message || "Não foi possível enviar a foto.");
+    } finally {
+      setEnviandoFoto(false);
+    }
+  };
+
+  const removerFoto = async () => {
+    setErro("");
+    setSucesso("");
+    try {
+      const token = localStorage.getItem("token");
+      await api.delete("/MeuPerfil/Avatar", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      setAvatar("avatar_1");
+      onAtualizar({ ...usuario, avatar: "avatar_1" });
+      setSucesso("Foto removida.");
+    } catch (error) {
+      console.log(error.response?.data || error.message);
+      setErro(error.response?.data?.error || error.response?.data?.message || "Não foi possível remover a foto.");
     }
   };
 
@@ -75,24 +157,42 @@ export default function PerfilUsuario({ usuario, onAtualizar, onExcluido }) {
 
           {/* AVATAR */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 20 }}>
-            <button
-              type="button"
-              onClick={() => setSeletorAberto((v) => !v)}
-              title="Trocar avatar"
-              style={{
-                width: 72, height: 72, borderRadius: "50%", border: `2px solid ${cores.latao}`,
-                background: cores.lataoClaro, fontSize: 34, display: "flex", alignItems: "center",
-                justifyContent: "center", cursor: "pointer",
-              }}
-            >
-              {emojiDoAvatar(avatar)}
-            </button>
-            <span
-              onClick={() => setSeletorAberto((v) => !v)}
-              style={{ fontSize: 12, color: cores.latao, cursor: "pointer", marginTop: 6, fontWeight: 600 }}
-            >
-              {seletorAberto ? "Fechar" : "Trocar avatar"}
-            </span>
+            <div style={{ border: `2px solid ${cores.latao}`, borderRadius: "50%" }}>
+              <Avatar avatar={avatar} tamanho={72} />
+            </div>
+
+            <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+              <span
+                onClick={() => setSeletorAberto((v) => !v)}
+                style={{ fontSize: 12, color: cores.latao, cursor: "pointer", fontWeight: 600 }}
+              >
+                {seletorAberto ? "Fechar ícones" : "Escolher ícone"}
+              </span>
+
+              <span
+                onClick={escolherArquivo}
+                style={{ fontSize: 12, color: cores.latao, cursor: "pointer", fontWeight: 600 }}
+              >
+                {enviandoFoto ? "Enviando..." : "Enviar foto"}
+              </span>
+
+              {fotoEhPersonalizada && (
+                <span
+                  onClick={removerFoto}
+                  style={{ fontSize: 12, color: cores.carimbo, cursor: "pointer", fontWeight: 600 }}
+                >
+                  Remover foto
+                </span>
+              )}
+            </div>
+
+            <input
+              ref={inputArquivoRef}
+              type="file"
+              accept="image/png, image/jpeg, image/webp"
+              onChange={enviarFoto}
+              style={{ display: "none" }}
+            />
 
             {seletorAberto && (
               <div style={{

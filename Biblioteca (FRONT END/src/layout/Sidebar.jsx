@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 import { cores, fontDisplay } from "../empréstimos/styles/tema";
-import { emojiDoAvatar } from "../empréstimos/utils/avatares";
+import Avatar from "../components/comum/Avatar";
 
 const ITENS = [
   { id: "dashboard", label: "Painel", icone: LayoutDashboard },
@@ -136,12 +136,7 @@ export default function Sidebar({
                   boxShadow: "0 4px 14px rgba(0,0,0,0.25)", whiteSpace: "nowrap",
                 }}
               >
-                <span style={{
-                  width: 34, height: 34, borderRadius: "50%", background: cores.lataoClaro,
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
-                }}>
-                  {emojiDoAvatar(usuario.avatar)}
-                </span>
+                <Avatar avatar={usuario.avatar} tamanho={34} />
                 <span style={{ color: cores.tinta, fontSize: 13, fontWeight: 600 }}>
                   {usuario.nome}
                 </span>
