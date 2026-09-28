@@ -1,4 +1,6 @@
 import { Router } from "express";
+import multer from "multer";
+import { uploadAvatar } from "./Middleware/uploadAvatar";
 import { categoriaController } from "./Controllers/categoriasControllers";
 import { livrosController } from "./Controllers/livrosControllers";
 import { usuariosController } from "./Controllers/usuariosControllers";
@@ -7,8 +9,10 @@ import { emprestimosController } from "./Controllers/emprestimosControllers";
 import { dashboardController } from "./Controllers/dashboardControllers";
 import { authMiddleware } from "./Middleware/authMiddleware";
 import { LogarUsuariosControllers } from "./Controllers/loginusuariosControllers";
+import { avatarController } from "./Controllers/perfilsControllers";
 
 const router = Router()
+
 
 router.post("/login", new LogarUsuariosControllers().loginUsuarios)
 // Categorias 
@@ -54,7 +58,18 @@ router.patch('/CancelarEmprestimo/:id_emprestimo', authMiddleware, new emprestim
 
 //Dashboard
 router.get('/Dashboard', new dashboardController().obterEstatisticas)
+router.post(
+    "/MeuPerfil/Avatar",
+    authMiddleware,
+    uploadAvatar.single("avatar"),
+    new avatarController().salvarAvatar
+)
 
+router.delete(
+    "/MeuPerfil/Avatar",
+    authMiddleware,
+    new avatarController().removerAvatar
+)
 
 
 export default router

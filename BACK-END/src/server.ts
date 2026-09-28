@@ -2,10 +2,15 @@ import express, {Request, Response, NextFunction} from 'express'
 import 'express-async-errors'
 import cors from 'cors'
 import router from './router'
+import path from 'path'
 
 const app = express()
 app.use(express.json())
 app.use(cors())
+app.use(
+    '/files',
+    express.static(path.resolve(__dirname, '..', 'tmp'))
+)
 app.use (router)
 
 app.use((err: Error, req: Request, res: Response, next:NextFunction) => {
