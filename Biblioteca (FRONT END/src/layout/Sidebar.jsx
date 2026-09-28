@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 import { cores, fontDisplay } from "../empréstimos/styles/tema";
-import { emojiDoAvatar } from "../utils/avatares";
+import { emojiDoAvatar } from "../empréstimos/utils/avatares";
 
 const ITENS = [
   { id: "dashboard", label: "Painel", icone: LayoutDashboard },
