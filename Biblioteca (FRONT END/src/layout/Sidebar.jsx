@@ -8,11 +8,11 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
-  UserCog,
-  UserX
+  UserCog
 } from "lucide-react";
 
 import { cores, fontDisplay } from "../empréstimos/styles/tema";
+import { emojiDoAvatar } from "../utils/avatares";
 
 const ITENS = [
   { id: "dashboard", label: "Painel", icone: LayoutDashboard },
@@ -25,9 +25,10 @@ export default function Sidebar({
   aba,
   setAba,
   onLogout,
-  onExcluirConta
+  usuario
 }) {
   const [configAberta, setConfigAberta] = useState(false);
+  const [previaVisivel, setPreviaVisivel] = useState(false);
 
   return (
     <div
@@ -110,10 +111,12 @@ export default function Sidebar({
         </button>
 
         {configAberta && (
-          <div style={{ paddingLeft: 8, marginTop: 2 }}>
+          <div style={{ paddingLeft: 8, marginTop: 2, position: "relative" }}>
             <button
               type="button"
               onClick={() => setAba("perfil")}
+              onMouseEnter={() => setPreviaVisivel(true)}
+              onMouseLeave={() => setPreviaVisivel(false)}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "8px 12px",
                 background: aba === "perfil" ? "#3B4C3B" : "transparent", border: "none", borderRadius: 3,
@@ -124,18 +127,26 @@ export default function Sidebar({
               Editar perfil
             </button>
 
-            <button
-              type="button"
-              onClick={onExcluirConta}
-              style={{
-                display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "8px 12px",
-                background: "transparent", border: "none", borderRadius: 3,
-                color: "#D18B7D", fontSize: 12.5, cursor: "pointer", textAlign: "left",
-              }}
-            >
-              <UserX size={14} />
-              Excluir usuário
-            </button>
+            {previaVisivel && usuario && (
+              <div
+                style={{
+                  position: "absolute", left: "100%", top: 0, marginLeft: 8, zIndex: 20,
+                  background: cores.papel, border: `1px solid ${cores.linha}`, borderRadius: 6,
+                  padding: "10px 14px", display: "flex", alignItems: "center", gap: 10,
+                  boxShadow: "0 4px 14px rgba(0,0,0,0.25)", whiteSpace: "nowrap",
+                }}
+              >
+                <span style={{
+                  width: 34, height: 34, borderRadius: "50%", background: cores.lataoClaro,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+                }}>
+                  {emojiDoAvatar(usuario.avatar)}
+                </span>
+                <span style={{ color: cores.tinta, fontSize: 13, fontWeight: 600 }}>
+                  {usuario.nome}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
