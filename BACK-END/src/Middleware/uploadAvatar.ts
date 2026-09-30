@@ -10,11 +10,12 @@ const storage = multer.diskStorage({
         cb(null, pastaUploads);
     },
 
-    filename: (req, file, cb) => {
-        const extensao = path.extname(file.originalname);
+  filename: (req, file, cb) => {
+    const extensao = path.extname(file.originalname);
 
-        const nomeArquivo =
-            `avatar-${Date.now()}-${Math.round(Math.random() * 1E9)}${extensao}`;
+    const nomeArquivo = `avatar-${Date.now()}-${Math.round(
+      Math.random() * 1e9
+    )}${extensao}`;
 
         console.log("🖼️ Arquivo criado:", nomeArquivo);
 
@@ -23,18 +24,18 @@ const storage = multer.diskStorage({
 });
 
 const uploadAvatar = multer({
-    storage,
+  storage,
 
-    limits: {
-        fileSize: 5 * 1024 * 1024
-    },
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
 
-    fileFilter: (req, file, cb) => {
-        const tiposPermitidos = [
-            "image/jpeg",
-            "image/png",
-            "image/webp"
-        ];
+  fileFilter: (req, file, cb) => {
+    const tiposPermitidos = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
 
         if (tiposPermitidos.includes(file.mimetype)) {
             cb(null, true);
@@ -42,6 +43,7 @@ const uploadAvatar = multer({
             cb(null, false);
         }
     }
-});
+  },
+);
 
 export { uploadAvatar };

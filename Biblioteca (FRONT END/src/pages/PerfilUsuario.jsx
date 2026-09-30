@@ -1,11 +1,9 @@
+// FRONT-END: PerfilUsuario.jsx
+
 import React, { useRef, useState } from "react";
 import api from "../services/api";
-import { cores, fontUI, inputStyle } from "../empréstimos/styles/tema";
+import { cores } from "../empréstimos/styles/tema";
 import { AVATARES } from "../empréstimos/utils/avatares";
-import Cabecalho from "../components/comum/Cabecalho";
-import Campo from "../components/comum/Campo";
-import BotaoPrincipal from "../components/comum/BotaoPrincipal";
-import Avatar from "../components/comum/Avatar";
 
 function extrairAvatarDaResposta(data, avatarAnterior) {
   if (!data) return avatarAnterior;
@@ -23,13 +21,23 @@ function extrairAvatarDaResposta(data, avatarAnterior) {
   );
 }
 
-export default function PerfilUsuario({ usuario, onAtualizar, onExcluido }) {
+export default function PerfilUsuario({
+  usuario,
+  onAtualizar,
+  onExcluido,
+}) {
+  const idUsuario = usuario?.id_usuarios || usuario?.id;
+
   const [nome, setNome] = useState(usuario?.nome || "");
   const [email, setEmail] = useState(usuario?.email || "");
-  const [avatar, setAvatar] = useState(usuario?.avatar || "avatar_1");
+  const [avatar, setAvatar] = useState(
+    usuario?.avatar || "avatar_1"
+  );
+
   const [novaSenha, setNovaSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [seletorAberto, setSeletorAberto] = useState(false);
+
   const [enviandoFoto, setEnviandoFoto] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
@@ -110,9 +118,17 @@ export default function PerfilUsuario({ usuario, onAtualizar, onExcluido }) {
     }
   };
 
+  // =========================
+  // ESCOLHER ARQUIVO
+  // =========================
+
   const escolherArquivo = () => {
     inputArquivoRef.current?.click();
   };
+
+  // =========================
+  // ENVIAR FOTO
+  // =========================
 
   const enviarFoto = async (e) => {
     const arquivo = e.target.files?.[0];
@@ -197,6 +213,10 @@ export default function PerfilUsuario({ usuario, onAtualizar, onExcluido }) {
     }
   };
 
+  // =========================
+  // REMOVER FOTO
+  // =========================
+
   const removerFoto = async () => {
     setErro("");
     setSucesso("");
@@ -231,6 +251,10 @@ export default function PerfilUsuario({ usuario, onAtualizar, onExcluido }) {
       );
     }
   };
+
+  // =========================
+  // EXCLUIR CONTA
+  // =========================
 
   const excluirConta = async () => {
     const confirmar = window.confirm(
@@ -272,6 +296,10 @@ export default function PerfilUsuario({ usuario, onAtualizar, onExcluido }) {
       setExcluindo(false);
     }
   };
+
+  // =========================
+  // TELA
+  // =========================
 
   return (
     <div
@@ -576,6 +604,74 @@ export default function PerfilUsuario({ usuario, onAtualizar, onExcluido }) {
               : "Excluir minha conta"}
           </button>
         </div>
+
+        {/* MENSAGENS */}
+
+        {erro && (
+          <div
+            style={{
+              color: "red",
+              marginBottom: 12,
+            }}
+          >
+            {erro}
+          </div>
+        )}
+
+        {sucesso && (
+          <div
+            style={{
+              color: "green",
+              marginBottom: 12,
+            }}
+          >
+            {sucesso}
+          </div>
+        )}
+
+        {/* SALVAR */}
+
+        <button
+          type="submit"
+          disabled={salvando}
+          style={{
+            width: "100%",
+            padding: 12,
+            cursor: "pointer",
+          }}
+        >
+          {salvando
+            ? "Salvando..."
+            : "Salvar alterações"}
+        </button>
+      </form>
+
+   
+      <div
+        style={{
+          marginTop: 30,
+          paddingTop: 20,
+          borderTop: "1px solid #ddd",
+        }}
+      >
+        <p>
+          Excluir sua conta é uma ação permanente.
+        </p>
+
+        <button
+          type="button"
+          onClick={excluirConta}
+          disabled={excluindo}
+          style={{
+            color: "red",
+            cursor: "pointer",
+            padding: 10,
+          }}
+        >
+          {excluindo
+            ? "Excluindo..."
+            : "Excluir minha conta"}
+        </button>
       </div>
     </div>
   );

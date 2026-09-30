@@ -1,46 +1,39 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://localhost:3334"
+  baseURL: "http://localhost:3334",
 });
 
-
 api.interceptors.request.use(
-    (config) => {
+  (config) => {
+    const token = localStorage.getItem("token");
 
-        const token = localStorage.getItem("token");
-
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-
-        return config;
-    },
-
-    (error) => {
-        return Promise.reject(error);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-);
 
+    return config;
+  },
+
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
 
-    (response) => {
-        return response;
-    },
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
 
-    (error) => {
-
-        if (error.response?.status === 401) {
-
-            localStorage.removeItem("token");
-
-            window.location.reload();
-        }
-
-        return Promise.reject(error);
+      window.location.reload();
     }
-);
 
+    return Promise.reject(error);
+  }
+);
 
 export default api;

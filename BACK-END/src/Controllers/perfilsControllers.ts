@@ -49,4 +49,4 @@ class avatarController {
     }
 }
 
-export { avatarController }
+export { avatarController };
