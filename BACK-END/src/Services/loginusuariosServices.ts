@@ -15,10 +15,14 @@ class LogarUsuariosServices {
                 email: email
             }
         })
+
         if (!emailExiste)
             throw new Error('Email Incorreto')
+
         const senhaCrypt = await compare(senha, emailExiste.senha)
-        if (!senhaCrypt) throw new Error('Senha Incorreta')
+
+        if (!senhaCrypt)
+            throw new Error('Senha Incorreta')
 
         const token = sign({
             id: emailExiste.id_usuarios,
@@ -26,22 +30,24 @@ class LogarUsuariosServices {
             email: emailExiste.email
         },
             process.env.JWT_SECRETO as string, {
-            subject: emailExiste.id_usuarios.toString(),
-            expiresIn: "8h"
-        }
-        )
-            return {
-
-                usuario: {
-                    id: emailExiste.id_usuarios,
-                    nome: emailExiste.nome,
-                    email: emailExiste.email
-                },
-                token
+                subject: emailExiste.id_usuarios.toString(),
+                expiresIn: "8h"
             }
+        )
 
+        return {
+
+            usuario: {
+                id: emailExiste.id_usuarios,
+                nome: emailExiste.nome,
+                email: emailExiste.email,
+                tipo: emailExiste.tipo,
+                avatar: emailExiste.avatar
+            },
+
+            token
+        }
     }
 }
 
-export {LogarUsuariosServices} 
- 
+export { LogarUsuariosServices }

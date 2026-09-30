@@ -58,7 +58,7 @@ export default function Sidebar({
             fontWeight: 600
           }}
         >
-          Biblioteca
+          LibrarySys
         </span>
       </div>
 

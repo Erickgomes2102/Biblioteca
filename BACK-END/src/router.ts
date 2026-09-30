@@ -231,7 +231,7 @@ router.patch(
 // =========================
 
 router.get(
-  "/Dashboard",
+  "/Dashboard", authMiddleware,
   new dashboardController().obterEstatisticas
 );
 
@@ -246,10 +246,5 @@ router.post(
   new avatarController().salvarAvatar
 );
 
-router.delete(
-  "/MeuPerfil/Avatar",
-  authMiddleware,
-  new avatarController().removerAvatar
-);
 
 export default router;
