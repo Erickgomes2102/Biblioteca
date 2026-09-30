@@ -2,8 +2,12 @@
 
 import React, { useRef, useState } from "react";
 import api from "../services/api";
-import { cores } from "../empréstimos/styles/tema";
+import { cores, fontUI, inputStyle } from "../empréstimos/styles/tema";
 import { AVATARES } from "../empréstimos/utils/avatares";
+import Cabecalho from "../components/comum/Cabecalho";
+import Campo from "../components/comum/Campo";
+import BotaoPrincipal from "../components/comum/BotaoPrincipal";
+import Avatar from "../components/comum/Avatar";
 
 function extrairAvatarDaResposta(data, avatarAnterior) {
   if (!data) return avatarAnterior;
@@ -49,9 +53,6 @@ export default function PerfilUsuario({
   const fotoEhPersonalizada =
     avatar && !avatar.startsWith("avatar_");
 
-  const idUsuario =
-    usuario?.id ?? usuario?.id_usuarios;
-
   const salvar = async (e) => {
     e.preventDefault();
 
@@ -70,7 +71,8 @@ export default function PerfilUsuario({
 
     const dados = {
       nome: nome.trim(),
-      email: email.trim()
+      email: email.trim(),
+      avatar,
     };
 
     if (novaSenha.trim()) {
@@ -93,14 +95,13 @@ export default function PerfilUsuario({
         ...usuario,
         ...dados,
         ...(usuarioResposta || {}),
-        avatar
+        avatar,
       };
 
       onAtualizar(usuarioAtualizado);
 
       setNovaSenha("");
       setSucesso("Perfil atualizado com sucesso!");
-
     } catch (error) {
       console.log(
         error.response?.data || error.message
@@ -112,37 +113,26 @@ export default function PerfilUsuario({
         error.response?.data?.erro ||
         "Não foi possível salvar."
       );
-
     } finally {
       setSalvando(false);
     }
   };
 
-  // =========================
-  // ESCOLHER ARQUIVO
-  // =========================
-
   const escolherArquivo = () => {
     inputArquivoRef.current?.click();
   };
-
-  // =========================
-  // ENVIAR FOTO
-  // =========================
 
   const enviarFoto = async (e) => {
     const arquivo = e.target.files?.[0];
 
     e.target.value = "";
 
-    if (!arquivo) {
-      return;
-    }
+    if (!arquivo) return;
 
     const tiposPermitidos = [
       "image/jpeg",
       "image/png",
-      "image/webp"
+      "image/webp",
     ];
 
     if (!tiposPermitidos.includes(arquivo.type)) {
@@ -166,18 +156,23 @@ export default function PerfilUsuario({
     setSucesso("");
     setEnviandoFoto(true);
 
+    const formData = new FormData();
+
+    formData.append("avatar", arquivo);
+    formData.append(
+      "id_usuarios",
+      String(idUsuario)
+    );
+
     try {
-      const formData = new FormData();
-
-      formData.append("avatar", arquivo);
-      formData.append(
-        "id_usuarios",
-        String(idUsuario)
-      );
-
       const resposta = await api.post(
         "/MeuPerfil/Avatar",
         formData
+      );
+
+      console.log(
+        "Resposta do upload de avatar:",
+        resposta.data
       );
 
       const novoAvatar = extrairAvatarDaResposta(
@@ -189,13 +184,10 @@ export default function PerfilUsuario({
 
       onAtualizar({
         ...usuario,
-        avatar: novoAvatar
+        avatar: novoAvatar,
       });
 
-      setSucesso(
-        "Foto atualizada com sucesso!"
-      );
-
+      setSucesso("Foto atualizada com sucesso!");
     } catch (error) {
       console.log(
         error.response?.data || error.message
@@ -207,15 +199,10 @@ export default function PerfilUsuario({
         error.response?.data?.erro ||
         "Não foi possível enviar a foto."
       );
-
     } finally {
       setEnviandoFoto(false);
     }
   };
-
-  // =========================
-  // REMOVER FOTO
-  // =========================
 
   const removerFoto = async () => {
     setErro("");
@@ -227,17 +214,18 @@ export default function PerfilUsuario({
     }
 
     try {
-      await api.delete(`/MeuPerfil/Avatar/${idUsuario}`);
+      await api.delete(
+        `/MeuPerfil/Avatar/${idUsuario}`
+      );
 
       setAvatar("avatar_1");
 
       onAtualizar({
         ...usuario,
-        avatar: "avatar_1"
+        avatar: "avatar_1",
       });
 
       setSucesso("Foto removida.");
-
     } catch (error) {
       console.log(
         error.response?.data || error.message
@@ -252,18 +240,12 @@ export default function PerfilUsuario({
     }
   };
 
-  // =========================
-  // EXCLUIR CONTA
-  // =========================
-
   const excluirConta = async () => {
     const confirmar = window.confirm(
       "Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita."
     );
 
-    if (!confirmar) {
-      return;
-    }
+    if (!confirmar) return;
 
     if (!idUsuario) {
       setErro("ID do usuário não encontrado.");
@@ -280,7 +262,6 @@ export default function PerfilUsuario({
       );
 
       onExcluido();
-
     } catch (error) {
       console.log(
         error.response?.data || error.message
@@ -297,22 +278,18 @@ export default function PerfilUsuario({
     }
   };
 
-  // =========================
-  // TELA
-  // =========================
-
   return (
     <div
       style={{
         display: "flex",
         justifyContent: "center",
-        fontFamily: fontUI
+        fontFamily: fontUI,
       }}
     >
       <div
         style={{
           width: "100%",
-          maxWidth: 420
+          maxWidth: 420,
         }}
       >
         <Cabecalho
@@ -326,22 +303,21 @@ export default function PerfilUsuario({
             background: cores.papel,
             border: `1px solid ${cores.linha}`,
             borderRadius: 6,
-            padding: "20px 22px"
+            padding: "20px 22px",
           }}
         >
-          {/* AVATAR */}
           <div
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              marginBottom: 20
+              marginBottom: 20,
             }}
           >
             <div
               style={{
                 border: `2px solid ${cores.latao}`,
-                borderRadius: "50%"
+                borderRadius: "50%",
               }}
             >
               <Avatar
@@ -354,7 +330,7 @@ export default function PerfilUsuario({
               style={{
                 display: "flex",
                 gap: 12,
-                marginTop: 8
+                marginTop: 8,
               }}
             >
               <span
@@ -365,7 +341,7 @@ export default function PerfilUsuario({
                   fontSize: 12,
                   color: cores.latao,
                   cursor: "pointer",
-                  fontWeight: 600
+                  fontWeight: 600,
                 }}
               >
                 {seletorAberto
@@ -379,7 +355,7 @@ export default function PerfilUsuario({
                   fontSize: 12,
                   color: cores.latao,
                   cursor: "pointer",
-                  fontWeight: 600
+                  fontWeight: 600,
                 }}
               >
                 {enviandoFoto
@@ -394,7 +370,7 @@ export default function PerfilUsuario({
                     fontSize: 12,
                     color: cores.carimbo,
                     cursor: "pointer",
-                    fontWeight: 600
+                    fontWeight: 600,
                   }}
                 >
                   Remover foto
@@ -414,14 +390,13 @@ export default function PerfilUsuario({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns:
-                    "repeat(6, 1fr)",
+                  gridTemplateColumns: "repeat(6, 1fr)",
                   gap: 8,
                   marginTop: 14,
                   padding: 12,
                   background: cores.fundo,
                   borderRadius: 6,
-                  border: `1px solid ${cores.linha}`
+                  border: `1px solid ${cores.linha}`,
                 }}
               >
                 {AVATARES.map((a) => (
@@ -445,7 +420,7 @@ export default function PerfilUsuario({
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center"
+                      justifyContent: "center",
                     }}
                     title={a.codigo}
                   >
@@ -479,7 +454,7 @@ export default function PerfilUsuario({
           <Campo label="Nova senha (deixe em branco para não alterar)">
             <div
               style={{
-                position: "relative"
+                position: "relative",
               }}
             >
               <input
@@ -490,7 +465,7 @@ export default function PerfilUsuario({
                 }
                 style={{
                   ...inputStyle,
-                  paddingRight: 38
+                  paddingRight: 38,
                 }}
                 value={novaSenha}
                 onChange={(e) =>
@@ -509,13 +484,12 @@ export default function PerfilUsuario({
                   position: "absolute",
                   right: 8,
                   top: "50%",
-                  transform:
-                    "translateY(-50%)",
+                  transform: "translateY(-50%)",
                   background: "none",
                   border: "none",
                   cursor: "pointer",
                   padding: 4,
-                  fontSize: 14
+                  fontSize: 14,
                 }}
               >
                 {mostrarSenha
@@ -529,7 +503,7 @@ export default function PerfilUsuario({
             <p
               style={{
                 color: cores.carimbo,
-                fontSize: 13
+                fontSize: 13,
               }}
             >
               {erro}
@@ -540,7 +514,7 @@ export default function PerfilUsuario({
             <p
               style={{
                 color: cores.verdeOk,
-                fontSize: 13
+                fontSize: 13,
               }}
             >
               {sucesso}
@@ -557,7 +531,7 @@ export default function PerfilUsuario({
               style={{
                 all: "unset",
                 width: "100%",
-                textAlign: "center"
+                textAlign: "center",
               }}
             >
               {salvando
@@ -572,20 +546,21 @@ export default function PerfilUsuario({
             marginTop: 20,
             paddingTop: 16,
             borderTop: `1px solid ${cores.linha}`,
-            textAlign: "center"
+            textAlign: "center",
           }}
         >
           <p
             style={{
               fontSize: 13,
               color: cores.tintaSuave,
-              marginBottom: 10
+              marginBottom: 10,
             }}
           >
             Excluir sua conta é uma ação permanente.
           </p>
 
           <button
+            type="button"
             onClick={excluirConta}
             disabled={excluindo}
             style={{
@@ -596,7 +571,7 @@ export default function PerfilUsuario({
               padding: "9px 16px",
               fontSize: 13,
               fontWeight: 700,
-              cursor: "pointer"
+              cursor: "pointer",
             }}
           >
             {excluindo
@@ -604,74 +579,6 @@ export default function PerfilUsuario({
               : "Excluir minha conta"}
           </button>
         </div>
-
-        {/* MENSAGENS */}
-
-        {erro && (
-          <div
-            style={{
-              color: "red",
-              marginBottom: 12,
-            }}
-          >
-            {erro}
-          </div>
-        )}
-
-        {sucesso && (
-          <div
-            style={{
-              color: "green",
-              marginBottom: 12,
-            }}
-          >
-            {sucesso}
-          </div>
-        )}
-
-        {/* SALVAR */}
-
-        <button
-          type="submit"
-          disabled={salvando}
-          style={{
-            width: "100%",
-            padding: 12,
-            cursor: "pointer",
-          }}
-        >
-          {salvando
-            ? "Salvando..."
-            : "Salvar alterações"}
-        </button>
-      </form>
-
-   
-      <div
-        style={{
-          marginTop: 30,
-          paddingTop: 20,
-          borderTop: "1px solid #ddd",
-        }}
-      >
-        <p>
-          Excluir sua conta é uma ação permanente.
-        </p>
-
-        <button
-          type="button"
-          onClick={excluirConta}
-          disabled={excluindo}
-          style={{
-            color: "red",
-            cursor: "pointer",
-            padding: 10,
-          }}
-        >
-          {excluindo
-            ? "Excluindo..."
-            : "Excluir minha conta"}
-        </button>
       </div>
     </div>
   );
