@@ -2,8 +2,16 @@ import React from "react";
 import { cores } from "../../empréstimos/styles/tema";
 import { emojiDoAvatar } from "../../empréstimos/utils/avatares";
 
+const API_URL = "http://localhost:3334";
+
 export default function Avatar({ avatar, tamanho = 34 }) {
   const ehImagem = avatar && !avatar.startsWith("avatar_");
+
+  const srcImagem = ehImagem
+    ? avatar.startsWith("http")
+      ? avatar
+      : `${API_URL}${avatar}`
+    : null;
 
   return (
     <span
@@ -22,9 +30,17 @@ export default function Avatar({ avatar, tamanho = 34 }) {
     >
       {ehImagem ? (
         <img
-          src={avatar}
+          src={srcImagem}
           alt="Avatar"
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
+          onError={(e) => {
+            console.error("Erro ao carregar avatar:", srcImagem);
+          }}
         />
       ) : (
         emojiDoAvatar(avatar)

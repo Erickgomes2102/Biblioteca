@@ -1,9 +1,13 @@
 import multer from "multer";
 import path from "path";
 
+const pastaUploads = path.resolve(__dirname, "..", "tmp");
+
+console.log("📁 MULTER SALVA EM:", pastaUploads);
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.resolve(__dirname, "..", "tmp"));
+        cb(null, pastaUploads);
     },
 
     filename: (req, file, cb) => {
@@ -11,6 +15,8 @@ const storage = multer.diskStorage({
 
         const nomeArquivo =
             `avatar-${Date.now()}-${Math.round(Math.random() * 1E9)}${extensao}`;
+
+        console.log("🖼️ Arquivo criado:", nomeArquivo);
 
         cb(null, nomeArquivo);
     }
@@ -33,7 +39,7 @@ const uploadAvatar = multer({
         if (tiposPermitidos.includes(file.mimetype)) {
             cb(null, true);
         } else {
-            cb(new Error("Formato de imagem não permitido"));
+            cb(null, false);
         }
     }
 });

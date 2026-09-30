@@ -65,11 +65,7 @@ router.post(
     new avatarController().salvarAvatar
 )
 
-router.delete(
-    "/MeuPerfil/Avatar",
-    authMiddleware,
-    new avatarController().removerAvatar
-)
+router.delete('/MeuPerfil/Avatar/:id_usuarios', authMiddleware, new avatarController().removerAvatar)
 
 
 export default router
