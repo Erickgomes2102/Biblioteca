@@ -1,8 +1,7 @@
-// BACK-END: src/router.ts
-
 import { Router } from "express";
 
 import { uploadAvatar } from "./Middleware/uploadAvatar";
+import { authMiddleware } from "./Middleware/authMiddleware";
 
 import { categoriaController } from "./Controllers/categoriasControllers";
 import { livrosController } from "./Controllers/livrosControllers";
@@ -13,237 +12,266 @@ import { dashboardController } from "./Controllers/dashboardControllers";
 import { LogarUsuariosControllers } from "./Controllers/loginusuariosControllers";
 import { avatarController } from "./Controllers/perfilsControllers";
 
-import { authMiddleware } from "./Middleware/authMiddleware";
 
 const router = Router();
 
-// =========================
+
+// =====================
 // LOGIN
-// =========================
+// =====================
+
+const login = new LogarUsuariosControllers();
 
 router.post(
-  "/login",
-  new LogarUsuariosControllers().loginUsuarios
+    "/Login",
+    login.loginUsuarios
 );
 
-// =========================
-// CATEGORIAS
-// =========================
 
-router.post(
-  "/CadastrarCategorias",
-  authMiddleware,
-  new categoriaController().cadastrarCategorias
-);
-
-router.get(
-  "/ListarCategorias",
-  authMiddleware,
-  new categoriaController().listarCategorias
-);
-
-router.get(
-  "/BuscarCategorias/:id_categorias",
-  authMiddleware,
-  new categoriaController().buscarCategorias
-);
-
-router.put(
-  "/EditarCategorias/:id_categorias",
-  authMiddleware,
-  new categoriaController().editarCategorias
-);
-
-router.delete('/MeuPerfil/Avatar/:id_usuarios', authMiddleware, new avatarController().removerAvatar)
-
-// =========================
-// LIVROS
-// =========================
-
-router.post(
-  "/CadastrarLivro",
-  authMiddleware,
-  new livrosController().criarLivro
-);
-
-router.get(
-  "/ListarLivros",
-  authMiddleware,
-  new livrosController().listarLivros
-);
-
-router.put(
-  "/EditarLivro/:id_livros",
-  authMiddleware,
-  new livrosController().editarLivro
-);
-
-router.get(
-  "/BuscarLivro/isbn/:isbn",
-  authMiddleware,
-  new livrosController().buscarLivroPorISBN
-);
-
-router.get(
-  "/BuscarLivro/:id_livros",
-  authMiddleware,
-  new livrosController().buscarLivroPorId
-);
-
-router.delete(
-  "/ExcluirLivro/:id_livros",
-  authMiddleware,
-  new livrosController().excluirLivro
-);
-
-// =========================
+// =====================
 // USUÁRIOS
-// =========================
+// =====================
+
+const usuarios = new usuariosController();
 
 router.post(
-  "/CadastrarUsuario",
-  new usuariosController().criarUsuario
+    "/CadastrarUsuario",
+    usuarios.criarUsuario
 );
 
 router.get(
-  "/ListarUsuarios",
-  authMiddleware,
-  new usuariosController().listarUsuarios
+    "/ListarUsuarios",
+    authMiddleware,
+    usuarios.listarUsuarios
 );
 
 router.get(
-  "/BuscarUsuario/:id_usuarios",
-  authMiddleware,
-  new usuariosController().buscarUsuarioPorId
-);
-
-router.get(
-  "/BuscarUsuario/email/:email",
-  authMiddleware,
-  new usuariosController().buscarUsuarioPorEmail
+    "/BuscarUsuario/:id_usuarios",
+    authMiddleware,
+    usuarios.buscarUsuarioPorId
 );
 
 router.put(
-  "/EditarUsuario/:id_usuarios",
-  authMiddleware,
-  new usuariosController().editarUsuario
+    "/EditarUsuario/:id_usuarios",
+    authMiddleware,
+    usuarios.editarUsuario
 );
 
 router.delete(
-  "/ExcluirUsuario/:id_usuarios",
-  new usuariosController().excluirUsuario
+    "/ExcluirUsuario/:id_usuarios",
+    usuarios.excluirUsuario
 );
 
-// =========================
+
+// =====================
+// LIVROS
+// =====================
+
+const livros = new livrosController();
+
+
+router.post(
+    "/CadastrarLivro",
+    authMiddleware,
+    livros.criarLivro
+);
+
+
+router.get(
+    "/ListarLivros",
+    authMiddleware,
+    livros.listarLivros
+);
+
+
+router.get(
+    "/BuscarLivro/:id_livros",
+    authMiddleware,
+    livros.buscarLivroPorId
+);
+
+
+router.put(
+    "/EditarLivro/:id_livros",
+    authMiddleware,
+    livros.editarLivro
+);
+
+
+router.delete(
+    "/ExcluirLivro/:id_livros",
+    authMiddleware,
+    livros.excluirLivro
+);
+
+
+// =====================
 // LEITORES
-// =========================
+// =====================
+
+const leitores = new leitoresController();
+
 
 router.post(
-  "/CriarLeitores",
-  authMiddleware,
-  new leitoresController().criarLeitor
+    "/CriarLeitores",
+    authMiddleware,
+    leitores.criarLeitor
 );
+
 
 router.get(
-  "/ListarLeitores",
-  authMiddleware,
-  new leitoresController().listarLeitores
+    "/ListarLeitores",
+    authMiddleware,
+    leitores.listarLeitores
 );
+
 
 router.get(
-  "/BuscarLeitor/CPF/:cpf",
-  authMiddleware,
-  new leitoresController().buscarLeitorPorCPF
+    "/BuscarLeitor/:id_leitores",
+    authMiddleware,
+    leitores.buscarLeitorPorId
 );
 
-router.get(
-  "/BuscarLeitor/:id_leitores",
-  authMiddleware,
-  new leitoresController().buscarLeitorPorId
-);
-
-router.delete(
-  "/RemoverLeitor/:id_leitores",
-  authMiddleware,
-  new leitoresController().excluirLeitor
-);
 
 router.put(
-  "/EditarLeitores/:id_leitores",
-  authMiddleware,
-  new leitoresController().editarLeitor
+    "/EditarLeitores/:id_leitores",
+    authMiddleware,
+    leitores.editarLeitor
 );
 
-// =========================
+
+router.delete(
+    "/RemoverLeitor/:id_leitores",
+    authMiddleware,
+    leitores.excluirLeitor
+);
+
+
+// =====================
+// CATEGORIAS
+// =====================
+
+const categorias = new categoriaController();
+
+
+router.post(
+    "/CadastrarCategorias",
+    authMiddleware,
+    categorias.cadastrarCategorias
+);
+
+
+router.get(
+    "/ListarCategorias",
+    authMiddleware,
+    categorias.listarCategorias
+);
+
+
+router.get(
+    "/BuscarCategorias/:id_categorias",
+    authMiddleware,
+    categorias.buscarCategorias
+);
+
+
+router.put(
+    "/EditarCategorias/:id_categorias",
+    authMiddleware,
+    categorias.editarCategorias
+);
+
+
+// =====================
 // EMPRÉSTIMOS
-// =========================
+// =====================
+
+const emprestimos = new emprestimosController();
+
 
 router.post(
-  "/CriarEmprestimos",
-  authMiddleware,
-  new emprestimosController().criarEmprestimo
+    "/CriarEmprestimos",
+    authMiddleware,
+    emprestimos.criarEmprestimo
 );
 
-router.get(
-  "/ListarEmprestimo",
-  authMiddleware,
-  new emprestimosController().listarEmprestimos
-);
 
 router.get(
-  "/BuscarEmprestimo/:id_emprestimo",
-  authMiddleware,
-  new emprestimosController().buscarEmprestimoPorId
+    "/ListarEmprestimo",
+    authMiddleware,
+    emprestimos.listarEmprestimos
 );
 
-router.get(
-  "/ListarEmprestimos/Ativos",
-  authMiddleware,
-  new emprestimosController().listarEmprestimosAtivos
-);
 
 router.get(
-  "/ListarEmprestimosAtrasados",
-  authMiddleware,
-  new emprestimosController().listarEmprestimosAtrasados
+    "/BuscarEmprestimo/:id_emprestimo",
+    authMiddleware,
+    emprestimos.buscarEmprestimoPorId
 );
+
+
+router.get(
+    "/ListarEmprestimos/Ativos",
+    authMiddleware,
+    emprestimos.listarEmprestimosAtivos
+);
+
+
+router.get(
+    "/ListarEmprestimosAtrasados",
+    authMiddleware,
+    emprestimos.listarEmprestimosAtrasados
+);
+
 
 router.patch(
-  "/DevolverLivro/:id_emprestimo",
-  authMiddleware,
-  new emprestimosController().devolverLivro
+    "/DevolverLivro/:id_emprestimo",
+    authMiddleware,
+    emprestimos.devolverLivro
 );
+
 
 router.get(
-  "/CalcularMulta/:id_emprestimo",
-  authMiddleware,
-  new emprestimosController().calcularMulta
+    "/CalcularMulta/:id_emprestimo",
+    authMiddleware,
+    emprestimos.calcularMulta
 );
+
 
 router.patch(
-  "/CancelarEmprestimo/:id_emprestimo",
-  authMiddleware,
-  new emprestimosController().cancelarEmprestimo
+    "/CancelarEmprestimo/:id_emprestimo",
+    authMiddleware,
+    emprestimos.cancelarEmprestimo
 );
 
-// =========================
+
+// =====================
 // DASHBOARD
-// =========================
+// =====================
 
 router.get(
-  "/Dashboard", authMiddleware,
-  new dashboardController().obterEstatisticas
+    "/Dashboard",
+    authMiddleware,
+    new dashboardController().obterEstatisticas
 );
 
-// =========================
-// AVATAR / PERFIL
-// =========================
+
+// =====================
+// PERFIL AVATAR
+// =====================
 
 router.post(
-  "/MeuPerfil/Avatar",
-  authMiddleware,
-  uploadAvatar.single("avatar"),
-  new avatarController().salvarAvatar
+    "/MeuPerfil/Avatar",
+    authMiddleware,
+    uploadAvatar.single("avatar"),
+    new avatarController().salvarAvatar
+);
+
+
+router.delete(
+    "/MeuPerfil/Avatar/:id_usuarios",
+    authMiddleware,
+    new avatarController().removerAvatar
 );
 
 
