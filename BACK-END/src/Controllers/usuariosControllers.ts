@@ -86,11 +86,12 @@ class usuariosController {
     async excluirUsuario(req: Request, res: Response) {
 
         const { id_usuarios } = req.params
+        const { tipo } = req.body
 
         const service = new usuariosServices()
 
         const resposta = await service.excluirUsuario(
-            Number(id_usuarios)
+            Number(id_usuarios), tipo
         )
 
         return res.json(resposta)
