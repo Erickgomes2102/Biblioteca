@@ -4,11 +4,11 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  DollarSign,
-  Eye
+  DollarSign
 } from "lucide-react";
 
 import api from "../services/api";
+
 import {
   cores,
   botaoIcone,
@@ -58,76 +58,59 @@ export default function Emprestimos({
   const [data_prevista, setDataPrevista] = useState("");
   const [erro, setErro] = useState("");
 
-
   // =====================================================
   // CARREGAR EMPRÉSTIMOS
   // =====================================================
 
   const carregarEmprestimos = async () => {
     try {
-
-      const resposta =
-        await api.get("/ListarEmprestimo");
+      const resposta = await api.get("/ListarEmprestimo");
 
       setEmprestimos(resposta.data);
-
     } catch (error) {
-
       console.log(
         error.response?.data ||
         error.message
       );
-
     }
   };
 
-
   useEffect(() => {
     carregarEmprestimos();
-  }, [setEmprestimos]);
-
+  }, []);
 
   // =====================================================
   // FORMATAR DINHEIRO
   // =====================================================
 
   const formatarDinheiro = (valor) => {
-
     const numero = Number(valor || 0);
 
     return numero.toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL"
     });
-
   };
-
 
   // =====================================================
   // FORMATAR DATA
   // =====================================================
 
   const formatarData = (data) => {
-
     if (!data) return "-";
 
     return new Date(data).toLocaleDateString(
       "pt-BR"
     );
-
   };
-
 
   // =====================================================
   // VERIFICAR SE TEM MULTA
   // =====================================================
 
   const temMulta = (emprestimo) => {
-
     return Number(emprestimo.multa || 0) > 0;
-
   };
-
 
   // =====================================================
   // FILTRAR EMPRÉSTIMOS
@@ -153,8 +136,7 @@ export default function Emprestimos({
           (livro?.titulo || "") +
           (leitor?.nome || "") +
           (emprestimo.status || "")
-        )
-          .toLowerCase();
+        ).toLowerCase();
 
       const correspondeBusca =
         textoBusca.includes(
@@ -165,79 +147,60 @@ export default function Emprestimos({
         return false;
       }
 
+      // =================================================
+      // TODAS
+      // =================================================
 
-      // Todas
       if (filtroMulta === "TODAS") {
         return true;
       }
 
+      // =================================================
+      // COM MULTA
+      // =================================================
 
-      // Com multa
       if (filtroMulta === "COM_MULTA") {
         return temMulta(emprestimo);
       }
 
+      // =================================================
+      // MULTAS PENDENTES
+      // =================================================
 
-      // Multas pendentes
       if (filtroMulta === "PENDENTES") {
-
         return (
           temMulta(emprestimo) &&
           emprestimo.status_multa !== "PAGA"
         );
-
       }
 
+      // =================================================
+      // MULTAS PAGAS
+      // =================================================
 
-      // Multas pagas
       if (filtroMulta === "PAGAS") {
-
         return (
           temMulta(emprestimo) &&
           emprestimo.status_multa === "PAGA"
         );
-
-      }
-
-
-      // Empréstimos atrasados
-      if (filtroMulta === "ATRASADOS") {
-
-        if (
-          !emprestimo.data_prevista ||
-          emprestimo.status !== "ATIVO"
-        ) {
-          return false;
-        }
-
-        return (
-          new Date(emprestimo.data_prevista) <
-          new Date()
-        );
-
       }
 
       return true;
-
     }
   );
-
 
   // =====================================================
   // LIMPAR FORMULÁRIO
   // =====================================================
 
   const limparFormulario = () => {
-
     setIdLeitores("");
     setIdLivros("");
     setIdUsuarios("");
     setDataEmprestimo("");
     setDataPrevista("");
     setErro("");
-
   };
-
 
   // =====================================================
   // CRIAR EMPRÉSTIMO
@@ -251,13 +214,11 @@ export default function Emprestimos({
       !id_usuarios ||
       !data_emprestimo
     ) {
-
       setErro(
         "Preencha todos os campos obrigatórios."
       );
 
       return;
-
     }
 
     try {
@@ -289,9 +250,7 @@ export default function Emprestimos({
           new Date(
             `${data_prevista || data_emprestimo}T00:00:00.000Z`
           ).toISOString()
-
       };
-
 
       const resposta =
         await api.post(
@@ -299,31 +258,23 @@ export default function Emprestimos({
           dados
         );
 
-
       setEmprestimos([
         resposta.data,
         ...emprestimos
       ]);
 
-
       setLivros(
         livros.map((livro) =>
-
           livro.id_livros ===
           Number(id_livros)
-
             ? {
                 ...livro,
-
                 quantidade:
                   Number(livro.quantidade) - 1
               }
-
             : livro
-
         )
       );
-
 
       limparFormulario();
       setNovo(false);
@@ -340,11 +291,8 @@ export default function Emprestimos({
         error.response?.data?.error ||
         "Erro ao criar empréstimo."
       );
-
     }
-
   };
-
 
   // =====================================================
   // DEVOLVER LIVRO
@@ -361,18 +309,14 @@ export default function Emprestimos({
           `/DevolverLivro/${id_emprestimo}`
         );
 
-
       const dadosAtualizados =
         resposta.data;
-
 
       setEmprestimos(
         emprestimos.map(
           (emprestimo) =>
-
             emprestimo.id_emprestimo ===
             id_emprestimo
-
               ? {
                   ...emprestimo,
 
@@ -394,13 +338,10 @@ export default function Emprestimos({
                     dadosAtualizados?.Dados
                       ?.status_multa ??
                     emprestimo.status_multa
-
                 }
-
               : emprestimo
         )
       );
-
 
       const emprestimo =
         emprestimos.find(
@@ -409,33 +350,21 @@ export default function Emprestimos({
             id_emprestimo
         );
 
-
       if (emprestimo) {
 
         setLivros(
           livros.map((livro) =>
-
             livro.id_livros ===
             emprestimo.id_livros
-
               ? {
                   ...livro,
-
                   quantidade:
                     Number(livro.quantidade) + 1
                 }
-
               : livro
-
           )
         );
-
       }
-
-
-      console.log(
-        resposta.data
-      );
 
     } catch (error) {
 
@@ -443,11 +372,8 @@ export default function Emprestimos({
         error.response?.data ||
         error.message
       );
-
     }
-
   };
-
 
   // =====================================================
   // CANCELAR EMPRÉSTIMO
@@ -463,7 +389,6 @@ export default function Emprestimos({
         `/CancelarEmprestimo/${id_emprestimo}`
       );
 
-
       const emprestimo =
         emprestimos.find(
           (e) =>
@@ -471,13 +396,10 @@ export default function Emprestimos({
             id_emprestimo
         );
 
-
       setEmprestimos(
         emprestimos.map((e) =>
-
           e.id_emprestimo ===
           id_emprestimo
-
             ? {
                 ...e,
 
@@ -491,35 +413,25 @@ export default function Emprestimos({
 
                 status_multa:
                   "SEM_MULTA"
-
               }
-
             : e
-
         )
       );
-
 
       if (emprestimo) {
 
         setLivros(
           livros.map((livro) =>
-
             livro.id_livros ===
             emprestimo.id_livros
-
               ? {
                   ...livro,
-
                   quantidade:
                     Number(livro.quantidade) + 1
                 }
-
               : livro
-
           )
         );
-
       }
 
     } catch (error) {
@@ -528,11 +440,8 @@ export default function Emprestimos({
         error.response?.data ||
         error.message
       );
-
     }
-
   };
-
 
   // =====================================================
   // CONSULTAR MULTA
@@ -565,11 +474,8 @@ export default function Emprestimos({
     } finally {
 
       setCarregandoMulta(false);
-
     }
-
   };
-
 
   // =====================================================
   // MARCAR MULTA COMO PAGA
@@ -585,15 +491,12 @@ export default function Emprestimos({
         `/MarcarMultaPaga/${id_emprestimo}`
       );
 
-
       await carregarEmprestimos();
-
 
       const resposta =
         await api.get(
           `/ConsultarMulta/${id_emprestimo}`
         );
-
 
       setMultaSelecionada(
         resposta.data
@@ -611,29 +514,22 @@ export default function Emprestimos({
         error.response?.data?.error ||
         "Erro ao marcar multa como paga."
       );
-
     }
-
   };
-
 
   // =====================================================
   // FECHAR CONSULTA DE MULTA
   // =====================================================
 
   const fecharMulta = () => {
-
     setMultaSelecionada(null);
-
   };
-
 
   // =====================================================
   // ESTILO DOS FILTROS
   // =====================================================
 
   const estiloFiltro = (ativo) => ({
-
     border:
       `1px solid ${
         ativo
@@ -664,9 +560,7 @@ export default function Emprestimos({
       ativo
         ? 600
         : 400
-
   });
-
 
   return (
 
@@ -700,7 +594,6 @@ export default function Emprestimos({
         }
       />
 
-
       {/* =====================================================
           BUSCA
       ===================================================== */}
@@ -710,7 +603,6 @@ export default function Emprestimos({
         onChange={setBusca}
         placeholder="Buscar por livro, leitor ou status"
       />
-
 
       {/* =====================================================
           FILTROS DE MULTA
@@ -737,7 +629,6 @@ export default function Emprestimos({
           Todas
         </button>
 
-
         <button
           onClick={() =>
             setFiltroMulta("COM_MULTA")
@@ -746,6 +637,7 @@ export default function Emprestimos({
             filtroMulta === "COM_MULTA"
           )}
         >
+
           <AlertTriangle
             size={12}
             style={{
@@ -755,8 +647,8 @@ export default function Emprestimos({
           />
 
           Com multa
-        </button>
 
+        </button>
 
         <button
           onClick={() =>
@@ -769,7 +661,6 @@ export default function Emprestimos({
           Multas pendentes
         </button>
 
-
         <button
           onClick={() =>
             setFiltroMulta("PAGAS")
@@ -781,20 +672,7 @@ export default function Emprestimos({
           Multas pagas
         </button>
 
-
-        <button
-          onClick={() =>
-            setFiltroMulta("ATRASADOS")
-          }
-          style={estiloFiltro(
-            filtroMulta === "ATRASADOS"
-          )}
-        >
-          Atrasados
-        </button>
-
       </div>
-
 
       {/* =====================================================
           LISTA
@@ -821,7 +699,6 @@ export default function Emprestimos({
                   emprestimo.id_livros
               );
 
-
             const leitor =
               leitores.find(
                 (l) =>
@@ -829,21 +706,17 @@ export default function Emprestimos({
                   emprestimo.id_leitores
               );
 
-
             const valorMulta =
               Number(
                 emprestimo.multa || 0
               );
 
-
             const possuiMulta =
               valorMulta > 0;
-
 
             const multaPaga =
               emprestimo.status_multa ===
               "PAGA";
-
 
             return (
 
@@ -858,7 +731,6 @@ export default function Emprestimos({
                   "Livro não encontrado"
                 }
 
-
                 sub={
 
                   `${leitor?.nome || "Leitor não encontrado"} · ` +
@@ -872,7 +744,6 @@ export default function Emprestimos({
                   )}`
 
                 }
-
 
                 selo={
 
@@ -911,7 +782,6 @@ export default function Emprestimos({
                       </span>
 
                     )}
-
 
                     {/* =================================================
                         AVISO DE MULTA
@@ -992,7 +862,6 @@ export default function Emprestimos({
 
                 }
 
-
                 acao={
 
                   <div
@@ -1042,7 +911,6 @@ export default function Emprestimos({
 
                     )}
 
-
                     {/* =================================================
                         AÇÕES DO EMPRÉSTIMO
                     ================================================= */}
@@ -1074,7 +942,6 @@ export default function Emprestimos({
                           />
 
                         </button>
-
 
                         <button
                           onClick={() =>
@@ -1114,7 +981,6 @@ export default function Emprestimos({
           }
         )}
 
-
         {/* =====================================================
             NENHUM RESULTADO
         ===================================================== */}
@@ -1137,7 +1003,6 @@ export default function Emprestimos({
         )}
 
       </div>
-
 
       {/* =====================================================
           MODAL DE CONSULTA DA MULTA
@@ -1195,7 +1060,6 @@ export default function Emprestimos({
 
               </div>
 
-
               {/* LEITOR */}
 
               <div
@@ -1221,7 +1085,6 @@ export default function Emprestimos({
                 </p>
 
               </div>
-
 
               {/* DATA PREVISTA */}
 
@@ -1250,7 +1113,6 @@ export default function Emprestimos({
 
               </div>
 
-
               {/* DIAS ATRASADOS */}
 
               <div
@@ -1278,7 +1140,6 @@ export default function Emprestimos({
 
               </div>
 
-
               {/* VALOR POR DIA */}
 
               <div
@@ -1305,7 +1166,6 @@ export default function Emprestimos({
                 </p>
 
               </div>
-
 
               {/* TOTAL */}
 
@@ -1348,7 +1208,6 @@ export default function Emprestimos({
 
               </div>
 
-
               {/* STATUS */}
 
               <div
@@ -1385,7 +1244,6 @@ export default function Emprestimos({
 
               </div>
 
-
               {/* DATA DO PAGAMENTO */}
 
               {multaSelecionada.data_pagamento && (
@@ -1417,12 +1275,9 @@ export default function Emprestimos({
 
               )}
 
+              {/* BOTÃO PAGAR */}
 
-              {/* =================================================
-                  BOTÃO PAGAR
-              ================================================= */}
-
-              {multaSelecionada.multa > 0 &&
+              {Number(multaSelecionada.multa || 0) > 0 &&
               multaSelecionada.status_multa !==
                 "PAGA" && (
 
@@ -1445,7 +1300,6 @@ export default function Emprestimos({
                 </BotaoPrincipal>
 
               )}
-
 
               {/* MULTA JÁ PAGA */}
 
@@ -1487,7 +1341,6 @@ export default function Emprestimos({
         </Modal>
 
       )}
-
 
       {/* =====================================================
           MODAL NOVO EMPRÉSTIMO
@@ -1550,7 +1403,6 @@ export default function Emprestimos({
 
           </Campo>
 
-
           {/* LIVRO */}
 
           <Campo label="Livro">
@@ -1572,14 +1424,12 @@ export default function Emprestimos({
               </option>
 
               {livros
-
                 .filter(
                   (livro) =>
                     Number(
                       livro.quantidade
                     ) > 0
                 )
-
                 .map(
                   (livro) => (
 
@@ -1606,7 +1456,6 @@ export default function Emprestimos({
             </select>
 
           </Campo>
-
 
           {/* USUÁRIO */}
 
@@ -1654,7 +1503,6 @@ export default function Emprestimos({
 
           </Campo>
 
-
           {/* DATA DO EMPRÉSTIMO */}
 
           <Campo
@@ -1678,7 +1526,6 @@ export default function Emprestimos({
             />
 
           </Campo>
-
 
           {/* DATA PREVISTA */}
 
@@ -1704,7 +1551,6 @@ export default function Emprestimos({
 
           </Campo>
 
-
           {/* ERRO */}
 
           {erro && (
@@ -1722,7 +1568,6 @@ export default function Emprestimos({
             </p>
 
           )}
-
 
           {/* SALVAR */}
 
@@ -1743,7 +1588,5 @@ export default function Emprestimos({
       )}
 
     </div>
-
   );
-
 }
