@@ -144,14 +144,18 @@ class usuariosServices {
         return usuarioAtualizado;
     }
 
-    async excluirUsuario(id_usuarios: number) {
+    async excluirUsuario(id_usuarios: number, tipo: string) {
 
         const usuario = await prismaClient.usuario.findUnique({
             where: {
                 id_usuarios
             }
         });
+        
+        if (tipo !== "ADMINISTRADOR") {
+            throw new Error("ADMINISTRADOR NÃO PODE SER APAGADO")
 
+        }
         if (!usuario) {
             throw new Error("Usuário não encontrado");
         }
