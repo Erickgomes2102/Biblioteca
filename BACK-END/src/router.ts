@@ -1,15 +1,23 @@
 import { Router } from "express";
 
 import { uploadAvatar } from "./Middleware/uploadAvatar";
+
 import { authMiddleware } from "./Middleware/authMiddleware";
 
 import { categoriaController } from "./Controllers/categoriasControllers";
+
 import { livrosController } from "./Controllers/livrosControllers";
+
 import { usuariosController } from "./Controllers/usuariosControllers";
+
 import { leitoresController } from "./Controllers/leitoresControllers";
+
 import { emprestimosController } from "./Controllers/emprestimosControllers";
+
 import { dashboardController } from "./Controllers/dashboardControllers";
+
 import { LogarUsuariosControllers } from "./Controllers/loginusuariosControllers";
+
 import { avatarController } from "./Controllers/perfilsControllers";
 
 
@@ -69,13 +77,11 @@ router.delete(
 
 const livros = new livrosController();
 
-
 router.post(
     "/CadastrarLivro",
     authMiddleware,
     livros.criarLivro
 );
-
 
 router.get(
     "/ListarLivros",
@@ -83,20 +89,17 @@ router.get(
     livros.listarLivros
 );
 
-
 router.get(
     "/BuscarLivro/:id_livros",
     authMiddleware,
     livros.buscarLivroPorId
 );
 
-
 router.put(
     "/EditarLivro/:id_livros",
     authMiddleware,
     livros.editarLivro
 );
-
 
 router.delete(
     "/ExcluirLivro/:id_livros",
@@ -111,13 +114,11 @@ router.delete(
 
 const leitores = new leitoresController();
 
-
 router.post(
     "/CriarLeitores",
     authMiddleware,
     leitores.criarLeitor
 );
-
 
 router.get(
     "/ListarLeitores",
@@ -125,20 +126,17 @@ router.get(
     leitores.listarLeitores
 );
 
-
 router.get(
     "/BuscarLeitor/:id_leitores",
     authMiddleware,
     leitores.buscarLeitorPorId
 );
 
-
 router.put(
     "/EditarLeitores/:id_leitores",
     authMiddleware,
     leitores.editarLeitor
 );
-
 
 router.delete(
     "/RemoverLeitor/:id_leitores",
@@ -153,13 +151,11 @@ router.delete(
 
 const categorias = new categoriaController();
 
-
 router.post(
     "/CadastrarCategorias",
     authMiddleware,
     categorias.cadastrarCategorias
 );
-
 
 router.get(
     "/ListarCategorias",
@@ -167,13 +163,11 @@ router.get(
     categorias.listarCategorias
 );
 
-
 router.get(
     "/BuscarCategorias/:id_categorias",
     authMiddleware,
     categorias.buscarCategorias
 );
-
 
 router.put(
     "/EditarCategorias/:id_categorias",
@@ -188,13 +182,11 @@ router.put(
 
 const emprestimos = new emprestimosController();
 
-
 router.post(
     "/CriarEmprestimos",
     authMiddleware,
     emprestimos.criarEmprestimo
 );
-
 
 router.get(
     "/ListarEmprestimo",
@@ -202,13 +194,11 @@ router.get(
     emprestimos.listarEmprestimos
 );
 
-
 router.get(
     "/BuscarEmprestimo/:id_emprestimo",
     authMiddleware,
     emprestimos.buscarEmprestimoPorId
 );
-
 
 router.get(
     "/ListarEmprestimos/Ativos",
@@ -216,13 +206,11 @@ router.get(
     emprestimos.listarEmprestimosAtivos
 );
 
-
 router.get(
     "/ListarEmprestimosAtrasados",
     authMiddleware,
     emprestimos.listarEmprestimosAtrasados
 );
-
 
 router.patch(
     "/DevolverLivro/:id_emprestimo",
@@ -230,18 +218,23 @@ router.patch(
     emprestimos.devolverLivro
 );
 
-
 router.get(
     "/CalcularMulta/:id_emprestimo",
     authMiddleware,
     emprestimos.calcularMulta
 );
 
-
 router.patch(
     "/CancelarEmprestimo/:id_emprestimo",
     authMiddleware,
     emprestimos.cancelarEmprestimo
+);
+
+// EXCLUIR EMPRÉSTIMO DEVOLVIDO
+router.delete(
+    "/ExcluirEmprestimo/:id_emprestimo",
+    authMiddleware,
+    emprestimos.excluirEmprestimo
 );
 
 
@@ -266,7 +259,6 @@ router.post(
     uploadAvatar.single("avatar"),
     new avatarController().salvarAvatar
 );
-
 
 router.delete(
     "/MeuPerfil/Avatar/:id_usuarios",

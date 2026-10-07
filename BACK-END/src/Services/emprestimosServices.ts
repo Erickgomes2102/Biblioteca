@@ -25,9 +25,7 @@ class emprestimosServices {
     }: cadastrarEmprestimo) {
 
         const leitor = await prismaClient.leitor.findUnique({
-            where: {
-                id_leitores
-            }
+            where: { id_leitores }
         });
 
         if (!leitor) {
@@ -35,9 +33,7 @@ class emprestimosServices {
         }
 
         const livro = await prismaClient.livro.findUnique({
-            where: {
-                id_livros
-            }
+            where: { id_livros }
         });
 
         if (!livro) {
@@ -49,33 +45,29 @@ class emprestimosServices {
         }
 
         const usuario = await prismaClient.usuario.findUnique({
-            where: {
-                id_usuarios
-            }
+            where: { id_usuarios }
         });
 
         if (!usuario) {
             throw new Error("Usuário responsável não encontrado");
         }
 
-        const emprestimo =
-            await prismaClient.emprestimo.create({
-                data: {
-                    id_leitores,
-                    id_livros,
-                    id_usuarios,
-                    data_emprestimo,
-                    data_prevista: data_prevista ?? null,
-                    data_devolucao,
-                    status: "ATIVO",
-                    multa: 0
-                }
-            });
+        const emprestimo = await prismaClient.emprestimo.create({
+            data: {
+                id_leitores,
+                id_livros,
+                id_usuarios,
+                data_emprestimo,
+                data_prevista: data_prevista ?? null,
+                data_devolucao,
+                status: "ATIVO",
+                multa: 0,
+                status_multa: "SEM_MULTA"
+            }
+        });
 
         await prismaClient.livro.update({
-            where: {
-                id_livros
-            },
+            where: { id_livros },
             data: {
                 quantidade: {
                     decrement: 1
@@ -93,21 +85,17 @@ class emprestimosServices {
 
     async listarEmprestimos() {
 
-        const emprestimos =
-            await prismaClient.emprestimo.findMany({
-                include: {
-                    leitor: true,
-                    livro: true,
-                    usuario: true,
-                    multaRegistro: true
-                },
-                orderBy: {
-                    data_emprestimo: "desc"
-                }
-            });
+        const emprestimos = await prismaClient.emprestimo.findMany({
+            include: {
+                leitor: true,
+                livro: true,
+                usuario: true
+            },
+            orderBy: {
+                data_emprestimo: "desc"
+            }
+        });
 
-        // Atualiza automaticamente as multas dos
-        // empréstimos ativos que estão atrasados.
         for (const emprestimo of emprestimos) {
 
             if (
@@ -116,7 +104,6 @@ class emprestimosServices {
             ) {
 
                 const hoje = new Date();
-
                 const dataPrevista =
                     new Date(emprestimo.data_prevista);
 
@@ -124,7 +111,6 @@ class emprestimosServices {
                 dataPrevista.setHours(0, 0, 0, 0);
 
                 if (hoje > dataPrevista) {
-
                     await this.calcularMulta(
                         emprestimo.id_emprestimo
                     );
@@ -132,22 +118,16 @@ class emprestimosServices {
             }
         }
 
-        // Busca novamente para retornar os valores
-        // atualizados.
-        const emprestimosAtualizados =
-            await prismaClient.emprestimo.findMany({
-                include: {
-                    leitor: true,
-                    livro: true,
-                    usuario: true,
-                    multaRegistro: true
-                },
-                orderBy: {
-                    data_emprestimo: "desc"
-                }
-            });
-
-        return emprestimosAtualizados;
+        return await prismaClient.emprestimo.findMany({
+            include: {
+                leitor: true,
+                livro: true,
+                usuario: true
+            },
+            orderBy: {
+                data_emprestimo: "desc"
+            }
+        });
     }
 
 
@@ -161,19 +141,18 @@ class emprestimosServices {
 
         const emprestimo =
             await prismaClient.emprestimo.findUnique({
-                where: {
-                    id_emprestimo
-                },
+                where: { id_emprestimo },
                 include: {
                     leitor: true,
                     livro: true,
-                    usuario: true,
-                    multaRegistro: true
+                    usuario: true
                 }
             });
 
         if (!emprestimo) {
-            throw new Error("Empréstimo não encontrado");
+            throw new Error(
+                "Empréstimo não encontrado"
+            );
         }
 
         return emprestimo;
@@ -186,19 +165,16 @@ class emprestimosServices {
 
     async listarEmprestimosAtivos() {
 
-        const emprestimos =
-            await prismaClient.emprestimo.findMany({
-                where: {
-                    status: "ATIVO"
-                },
-                include: {
-                    leitor: true,
-                    livro: true,
-                    multaRegistro: true
-                }
-            });
-
-        return emprestimos;
+        return await prismaClient.emprestimo.findMany({
+            where: {
+                status: "ATIVO"
+            },
+            include: {
+                leitor: true,
+                livro: true,
+                usuario: true
+            }
+        });
     }
 
 
@@ -210,23 +186,20 @@ class emprestimosServices {
 
         const hoje = new Date();
 
-        const emprestimos =
-            await prismaClient.emprestimo.findMany({
-                where: {
-                    status: "ATIVO",
-                    data_prevista: {
-                        not: null,
-                        lt: hoje
-                    }
-                },
-                include: {
-                    leitor: true,
-                    livro: true,
-                    multaRegistro: true
+        return await prismaClient.emprestimo.findMany({
+            where: {
+                status: "ATIVO",
+                data_prevista: {
+                    not: null,
+                    lt: hoje
                 }
-            });
-
-        return emprestimos;
+            },
+            include: {
+                leitor: true,
+                livro: true,
+                usuario: true
+            }
+        });
     }
 
 
@@ -240,26 +213,22 @@ class emprestimosServices {
 
         const emprestimo =
             await prismaClient.emprestimo.findUnique({
-                where: {
-                    id_emprestimo
-                },
-                include: {
-                    multaRegistro: true
-                }
+                where: { id_emprestimo }
             });
 
         if (!emprestimo) {
-            throw new Error("Empréstimo não encontrado");
+            throw new Error(
+                "Empréstimo não encontrado"
+            );
         }
 
         if (!emprestimo.data_prevista) {
 
             await prismaClient.emprestimo.update({
-                where: {
-                    id_emprestimo
-                },
+                where: { id_emprestimo },
                 data: {
-                    multa: 0
+                    multa: 0,
+                    status_multa: "SEM_MULTA"
                 }
             });
 
@@ -274,18 +243,15 @@ class emprestimosServices {
         hoje.setHours(0, 0, 0, 0);
         dataPrevista.setHours(0, 0, 0, 0);
 
-        // Ainda não está atrasado.
         if (hoje <= dataPrevista) {
 
-            // Se não existe multa, garante multa = 0.
-            if (!emprestimo.multaRegistro) {
+            if (emprestimo.status_multa !== "PAGA") {
 
                 await prismaClient.emprestimo.update({
-                    where: {
-                        id_emprestimo
-                    },
+                    where: { id_emprestimo },
                     data: {
-                        multa: 0
+                        multa: 0,
+                        status_multa: "SEM_MULTA"
                     }
                 });
             }
@@ -303,65 +269,23 @@ class emprestimosServices {
                 (1000 * 60 * 60 * 24)
             );
 
-        // R$ 2,00 por dia de atraso.
         const valorMulta =
             diasAtrasados * 2;
 
-        // Se a multa já foi paga, não volta para pendente.
+        let novoStatus =
+            emprestimo.status_multa;
+
         if (
-            emprestimo.multaRegistro &&
-            emprestimo.multaRegistro.status === "PAGA"
+            emprestimo.status_multa !== "PAGA"
         ) {
-
-            await prismaClient.emprestimo.update({
-                where: {
-                    id_emprestimo
-                },
-                data: {
-                    multa: valorMulta
-                }
-            });
-
-            return valorMulta;
+            novoStatus = "PENDENTE";
         }
 
-        // Se já existe registro de multa,
-        // atualiza o valor e os dias.
-        if (emprestimo.multaRegistro) {
-
-            await prismaClient.multa.update({
-                where: {
-                    id_multa:
-                        emprestimo.multaRegistro.id_multa
-                },
-                data: {
-                    valor: valorMulta,
-                    dias_atraso: diasAtrasados,
-                    data_calculo: new Date(),
-                    status: "PENDENTE"
-                }
-            });
-
-        } else {
-
-            // Se ainda não existe, cria a multa.
-            await prismaClient.multa.create({
-                data: {
-                    valor: valorMulta,
-                    dias_atraso: diasAtrasados,
-                    status: "PENDENTE",
-                    id_emprestimo
-                }
-            });
-        }
-
-        // Mantém o valor resumido também em Emprestimo.
         await prismaClient.emprestimo.update({
-            where: {
-                id_emprestimo
-            },
+            where: { id_emprestimo },
             data: {
-                multa: valorMulta
+                multa: valorMulta,
+                status_multa: novoStatus
             }
         });
 
@@ -379,9 +303,7 @@ class emprestimosServices {
 
         const emprestimo =
             await prismaClient.emprestimo.findUnique({
-                where: {
-                    id_emprestimo
-                }
+                where: { id_emprestimo }
             });
 
         if (!emprestimo) {
@@ -396,16 +318,17 @@ class emprestimosServices {
             );
         }
 
-        const data_devolucao =
-            new Date();
+        const data_devolucao = new Date();
 
-        // Calcula a multa considerando a data de devolução.
         let multa = 0;
+        let status_multa = "SEM_MULTA";
 
         if (emprestimo.data_prevista) {
 
             const dataPrevista =
-                new Date(emprestimo.data_prevista);
+                new Date(
+                    emprestimo.data_prevista
+                );
 
             const dataReferencia =
                 new Date(data_devolucao);
@@ -413,7 +336,10 @@ class emprestimosServices {
             dataPrevista.setHours(0, 0, 0, 0);
             dataReferencia.setHours(0, 0, 0, 0);
 
-            if (dataReferencia > dataPrevista) {
+            if (
+                dataReferencia >
+                dataPrevista
+            ) {
 
                 const diferenca =
                     dataReferencia.getTime() -
@@ -425,68 +351,29 @@ class emprestimosServices {
                         (1000 * 60 * 60 * 24)
                     );
 
-                multa =
-                    diasAtrasados * 2;
+                multa = diasAtrasados * 2;
 
-                // Verifica se já existe uma multa.
-                const multaExistente =
-                    await prismaClient.multa.findUnique({
-                        where: {
-                            id_emprestimo
-                        }
-                    });
-
-                if (multaExistente) {
-
-                    if (
-                        multaExistente.status !== "PAGA"
-                    ) {
-
-                        await prismaClient.multa.update({
-                            where: {
-                                id_multa:
-                                    multaExistente.id_multa
-                            },
-                            data: {
-                                valor: multa,
-                                dias_atraso:
-                                    diasAtrasados,
-                                data_calculo:
-                                    new Date(),
-                                status: "PENDENTE"
-                            }
-                        });
-                    }
-
-                } else {
-
-                    await prismaClient.multa.create({
-                        data: {
-                            valor: multa,
-                            dias_atraso:
-                                diasAtrasados,
-                            status: "PENDENTE",
-                            id_emprestimo
-                        }
-                    });
-                }
+                status_multa =
+                    emprestimo.status_multa === "PAGA"
+                        ? "PAGA"
+                        : "PENDENTE";
             }
         }
 
         await prismaClient.emprestimo.update({
-            where: {
-                id_emprestimo
-            },
+            where: { id_emprestimo },
             data: {
                 data_devolucao,
                 status: "DEVOLVIDO",
-                multa
+                multa,
+                status_multa
             }
         });
 
         await prismaClient.livro.update({
             where: {
-                id_livros: emprestimo.id_livros
+                id_livros:
+                    emprestimo.id_livros
             },
             data: {
                 quantidade: {
@@ -512,9 +399,7 @@ class emprestimosServices {
 
         const emprestimo =
             await prismaClient.emprestimo.findUnique({
-                where: {
-                    id_emprestimo
-                }
+                where: { id_emprestimo }
             });
 
         if (!emprestimo) {
@@ -530,31 +415,19 @@ class emprestimosServices {
         }
 
         await prismaClient.emprestimo.update({
-            where: {
-                id_emprestimo
-            },
+            where: { id_emprestimo },
             data: {
                 status: "CANCELADO",
                 data_devolucao: new Date(),
-                multa: 0
-            }
-        });
-
-        // Se houver alguma multa pendente,
-        // ela é cancelada porque o empréstimo foi cancelado.
-        await prismaClient.multa.updateMany({
-            where: {
-                id_emprestimo,
-                status: "PENDENTE"
-            },
-            data: {
-                status: "CANCELADA"
+                multa: 0,
+                status_multa: "CANCELADA"
             }
         });
 
         await prismaClient.livro.update({
             where: {
-                id_livros: emprestimo.id_livros
+                id_livros:
+                    emprestimo.id_livros
             },
             data: {
                 quantidade: {
@@ -570,28 +443,72 @@ class emprestimosServices {
 
 
     // =====================================================
+    // EXCLUIR EMPRÉSTIMO DEVOLVIDO
+    // =====================================================
+
+    async excluirEmprestimo(
+        id_emprestimo: number
+    ) {
+
+        const emprestimo =
+            await prismaClient.emprestimo.findUnique({
+                where: {
+                    id_emprestimo
+                }
+            });
+
+        if (!emprestimo) {
+            throw new Error(
+                "Empréstimo não encontrado"
+            );
+        }
+
+        // Só permite excluir empréstimos
+        // que já foram devolvidos
+        if (emprestimo.status !== "DEVOLVIDO") {
+            throw new Error(
+                "Somente empréstimos devolvidos podem ser excluídos."
+            );
+        }
+
+        await prismaClient.emprestimo.delete({
+            where: {
+                id_emprestimo
+            }
+        });
+
+        return {
+            Dados: "Empréstimo excluído com sucesso."
+        };
+    }
+
+
+    // =====================================================
     // LISTAR MULTAS
     // =====================================================
 
     async listarMultas() {
 
-        const multas =
-            await prismaClient.multa.findMany({
-                include: {
-                    emprestimo: {
-                        include: {
-                            leitor: true,
-                            livro: true,
-                            usuario: true
-                        }
+        return await prismaClient.emprestimo.findMany({
+            where: {
+                OR: [
+                    {
+                        status_multa: "PENDENTE"
+                    },
+                    {
+                        status_multa: "PAGA"
                     }
-                },
-                orderBy: {
-                    data_calculo: "desc"
-                }
-            });
-
-        return multas;
+                ]
+            },
+            include: {
+                leitor: true,
+                livro: true,
+                usuario: true
+            },
+            orderBy: {
+                data_emprestimo: "desc"
+            }
+        });
     }
 
 
@@ -605,13 +522,10 @@ class emprestimosServices {
 
         const emprestimo =
             await prismaClient.emprestimo.findUnique({
-                where: {
-                    id_emprestimo
-                },
+                where: { id_emprestimo },
                 include: {
                     leitor: true,
-                    livro: true,
-                    multaRegistro: true
+                    livro: true
                 }
             });
 
@@ -621,32 +535,34 @@ class emprestimosServices {
             );
         }
 
-        // Se está ativo e atrasado,
-        // atualiza/cria a multa antes da consulta.
         if (
             emprestimo.status === "ATIVO" &&
             emprestimo.data_prevista
         ) {
 
             const hoje = new Date();
+
             const dataPrevista =
-                new Date(emprestimo.data_prevista);
+                new Date(
+                    emprestimo.data_prevista
+                );
 
             hoje.setHours(0, 0, 0, 0);
             dataPrevista.setHours(0, 0, 0, 0);
 
             if (hoje > dataPrevista) {
-
                 await this.calcularMulta(
                     id_emprestimo
                 );
             }
         }
 
-        const multa =
-            await prismaClient.multa.findUnique({
-                where: {
-                    id_emprestimo
+        const emprestimoAtualizado =
+            await prismaClient.emprestimo.findUnique({
+                where: { id_emprestimo },
+                include: {
+                    leitor: true,
+                    livro: true
                 }
             });
 
@@ -655,17 +571,36 @@ class emprestimosServices {
         if (emprestimo.data_prevista) {
 
             const dataReferencia =
-                emprestimo.status === "DEVOLVIDO"
-                    ? new Date(emprestimo.data_devolucao)
+                emprestimo.status === "DEVOLVIDO" &&
+                emprestimo.data_devolucao
+                    ? new Date(
+                        emprestimo.data_devolucao
+                    )
                     : new Date();
 
             const dataPrevista =
-                new Date(emprestimo.data_prevista);
+                new Date(
+                    emprestimo.data_prevista
+                );
 
-            dataReferencia.setHours(0, 0, 0, 0);
-            dataPrevista.setHours(0, 0, 0, 0);
+            dataReferencia.setHours(
+                0,
+                0,
+                0,
+                0
+            );
 
-            if (dataReferencia > dataPrevista) {
+            dataPrevista.setHours(
+                0,
+                0,
+                0,
+                0
+            );
+
+            if (
+                dataReferencia >
+                dataPrevista
+            ) {
 
                 diasAtrasados =
                     Math.ceil(
@@ -692,21 +627,22 @@ class emprestimosServices {
                 emprestimo.data_prevista,
 
             dias_atrasados:
-                multa?.dias_atraso ?? diasAtrasados,
+                diasAtrasados,
 
-            valor_por_dia:
-                2,
+            valor_por_dia: 2,
 
             multa:
-                multa
-                    ? Number(multa.valor)
-                    : Number(emprestimo.multa),
+                Number(
+                    emprestimoAtualizado?.multa ?? 0
+                ),
 
             status_multa:
-                multa?.status ?? "SEM_MULTA",
+                emprestimoAtualizado?.status_multa ??
+                "SEM_MULTA",
 
             data_pagamento:
-                multa?.data_pagamento ?? null
+                emprestimoAtualizado?.data_pagamento ??
+                null
         };
     }
 
@@ -721,9 +657,7 @@ class emprestimosServices {
 
         const emprestimo =
             await prismaClient.emprestimo.findUnique({
-                where: {
-                    id_emprestimo
-                }
+                where: { id_emprestimo }
             });
 
         if (!emprestimo) {
@@ -732,40 +666,38 @@ class emprestimosServices {
             );
         }
 
-        const multa =
-            await prismaClient.multa.findUnique({
-                where: {
-                    id_emprestimo
-                }
-            });
-
-        if (!multa || Number(multa.valor) <= 0) {
+        if (Number(emprestimo.multa) <= 0) {
             throw new Error(
                 "Este empréstimo não possui multa."
             );
         }
 
-        if (multa.status === "PAGA") {
+        if (
+            emprestimo.status_multa === "PAGA"
+        ) {
             throw new Error(
                 "Esta multa já foi paga."
             );
         }
 
-        if (multa.status === "CANCELADA") {
+        if (
+            emprestimo.status_multa === "CANCELADA"
+        ) {
             throw new Error(
                 "Esta multa está cancelada."
             );
         }
 
+        const dataPagamento =
+            new Date();
+
         const atualizado =
-            await prismaClient.multa.update({
-                where: {
-                    id_multa:
-                        multa.id_multa
-                },
+            await prismaClient.emprestimo.update({
+                where: { id_emprestimo },
                 data: {
-                    status: "PAGA",
-                    data_pagamento: new Date()
+                    status_multa: "PAGA",
+                    data_pagamento:
+                        dataPagamento
                 }
             });
 
@@ -773,17 +705,14 @@ class emprestimosServices {
             mensagem:
                 "Multa marcada como paga.",
 
-            id_multa:
-                atualizado.id_multa,
-
             id_emprestimo:
                 atualizado.id_emprestimo,
 
             multa:
-                Number(atualizado.valor),
+                Number(atualizado.multa),
 
             status_multa:
-                atualizado.status,
+                atualizado.status_multa,
 
             data_pagamento:
                 atualizado.data_pagamento
@@ -791,4 +720,7 @@ class emprestimosServices {
     }
 }
 
-export { emprestimosServices };
+
+export {
+    emprestimosServices
+};
