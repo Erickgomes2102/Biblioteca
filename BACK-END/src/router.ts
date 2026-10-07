@@ -230,12 +230,9 @@ router.patch(
     emprestimos.cancelarEmprestimo
 );
 
-// EXCLUIR EMPRÉSTIMO DEVOLVIDO
-router.delete(
-    "/ExcluirEmprestimo/:id_emprestimo",
-    authMiddleware,
-    emprestimos.excluirEmprestimo
-);
+router.patch("/PagarMulta/:id_emprestimo", authMiddleware, emprestimos.marcarMultaComoPaga)
+
+
 
 
 // =====================

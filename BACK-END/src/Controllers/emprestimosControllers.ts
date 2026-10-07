@@ -269,34 +269,6 @@ class emprestimosController {
 
         return res.json(resposta);
     }
-
-
-    // =====================================================
-    // EXCLUIR EMPRÉSTIMO DEVOLVIDO
-    // =====================================================
-
-    async excluirEmprestimo(
-        req: Request,
-        res: Response
-    ) {
-
-        const {
-            id_emprestimo
-        } = req.params;
-
-        const service =
-            new emprestimosServices();
-
-        const resposta =
-            await service.excluirEmprestimo(
-                Number(id_emprestimo)
-            );
-
-        return res.json(resposta);
-    }
 }
 
-
-export {
-    emprestimosController
-};
+export { emprestimosController }

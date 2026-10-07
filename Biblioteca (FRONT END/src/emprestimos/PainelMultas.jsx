@@ -85,7 +85,7 @@ export default function PainelMultas({
           Number(multa.multa || 0);
 
         const paga =
-          multa.status_multa === "PAGA";
+          emprestimo.multaRegistro?.status === "PAGA";
 
 
         return (
