@@ -5,7 +5,8 @@ import {
   Repeat,
   LayoutDashboard,
   LogOut,
-  UserCog
+  UserCog,
+  Shield
 } from "lucide-react";
 
 import { cores, fontDisplay } from "../empréstimos/styles/tema";
@@ -48,7 +49,11 @@ export default function Sidebar({
           borderBottom: "1px solid #3B4C3B"
         }}
       >
-        <BookOpen size={20} color={cores.latao} />
+
+        <BookOpen
+          size={20}
+          color={cores.latao}
+        />
 
         <span
           style={{
@@ -60,6 +65,7 @@ export default function Sidebar({
         >
           LibrarySys
         </span>
+
       </div>
 
 
@@ -73,6 +79,7 @@ export default function Sidebar({
       >
 
         {ITENS.map((it) => {
+
           const Icone = it.icone;
           const ativo = aba === it.id;
 
@@ -88,24 +95,81 @@ export default function Sidebar({
                 width: "100%",
                 padding: "10px 12px",
                 marginBottom: 4,
-                background: ativo ? "#3B4C3B" : "transparent",
+                background: ativo
+                  ? "#3B4C3B"
+                  : "transparent",
                 border: "none",
                 borderLeft: ativo
                   ? `3px solid ${cores.latao}`
                   : "3px solid transparent",
                 borderRadius: 3,
-                color: ativo ? "#fff" : "#B9C4B4",
+                color: ativo
+                  ? "#fff"
+                  : "#B9C4B4",
                 fontSize: 13.5,
                 cursor: "pointer",
-                fontWeight: ativo ? 600 : 500,
+                fontWeight: ativo
+                  ? 600
+                  : 500,
                 textAlign: "left"
               }}
             >
+
               <Icone size={16} />
+
               {it.label}
+
             </button>
           );
+
         })}
+
+
+        {/* ADMINISTRAÇÃO */}
+
+        {usuario?.tipo === "ADMINISTRADOR" && (
+
+          <button
+            type="button"
+            onClick={() => setAba("administracao")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              width: "100%",
+              padding: "10px 12px",
+              marginBottom: 4,
+              background:
+                aba === "administracao"
+                  ? "#3B4C3B"
+                  : "transparent",
+              border: "none",
+              borderLeft:
+                aba === "administracao"
+                  ? `3px solid ${cores.latao}`
+                  : "3px solid transparent",
+              borderRadius: 3,
+              color:
+                aba === "administracao"
+                  ? "#fff"
+                  : "#B9C4B4",
+              fontSize: 13.5,
+              cursor: "pointer",
+              fontWeight:
+                aba === "administracao"
+                  ? 600
+                  : 500,
+              textAlign: "left"
+            }}
+          >
+
+            <Shield size={16} />
+
+            Administração
+
+          </button>
+
+        )}
 
       </div>
 
@@ -128,9 +192,10 @@ export default function Sidebar({
             gap: 10,
             width: "100%",
             padding: "10px 10px",
-            background: aba === "perfil"
-              ? "#3B4C3B"
-              : "transparent",
+            background:
+              aba === "perfil"
+                ? "#3B4C3B"
+                : "transparent",
             border: "none",
             borderRadius: 5,
             cursor: "pointer",
@@ -205,8 +270,11 @@ export default function Sidebar({
             marginTop: 4
           }}
         >
+
           <LogOut size={16} />
+
           Sair
+
         </button>
 
       </div>

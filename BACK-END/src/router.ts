@@ -20,6 +20,8 @@ import { LogarUsuariosControllers } from "./Controllers/loginusuariosControllers
 
 import { avatarController } from "./Controllers/perfilsControllers";
 
+import { adminMiddleware } from "./Middleware/adminMiddleware";
+
 
 const router = Router();
 
@@ -47,28 +49,6 @@ router.post(
     usuarios.criarUsuario
 );
 
-router.get(
-    "/ListarUsuarios",
-    authMiddleware,
-    usuarios.listarUsuarios
-);
-
-router.get(
-    "/BuscarUsuario/:id_usuarios",
-    authMiddleware,
-    usuarios.buscarUsuarioPorId
-);
-
-router.put(
-    "/EditarUsuario/:id_usuarios",
-    authMiddleware,
-    usuarios.editarUsuario
-);
-
-router.delete(
-    "/ExcluirUsuario/:id_usuarios",
-    usuarios.excluirUsuario
-);
 
 
 // =====================
@@ -263,5 +243,14 @@ router.delete(
     new avatarController().removerAvatar
 );
 
+router.get("/Administracao/Usuarios", authMiddleware, adminMiddleware, new usuariosController().listarUsuarios)
+
+router.get("/Administracao/Usuarios/:id_usuarios", authMiddleware, adminMiddleware, new usuariosController().buscarUsuarioPorId)
+
+router.put("/Administracao/Usuarios/Editar/:id_usuarios", authMiddleware, adminMiddleware, new usuariosController().editarUsuario)
+
+router.patch("/Administracao/Usuarios/Privilegio/:id_usuarios/", authMiddleware, adminMiddleware, new usuariosController().alterarPrivilegio)
+
+router.delete("/Administracao/Usuarios/Deletar/:id_usuarios", authMiddleware, adminMiddleware, new usuariosController().excluirUsuario)
 
 export default router;

@@ -29,7 +29,8 @@ export default function Emprestimos({
   leitores,
   emprestimos,
   setEmprestimos,
-  usuarios
+  usuarios,
+  usuarioLogado
 }) {
 
   const [busca, setBusca] = useState("");
@@ -54,6 +55,20 @@ export default function Emprestimos({
 
   const [erro, setErro] = useState("");
 
+
+  // =====================================================
+  // VERIFICAR PERFIL
+  // =====================================================
+
+  const ehBibliotecario =
+    usuarioLogado?.tipo === "BIBLIOTECÁRIO";
+
+  const ehAdministrador =
+    usuarioLogado?.tipo === "ADMINISTRADOR";
+
+    console.log("USUÁRIO LOGADO:", usuarioLogado);
+console.log("TIPO:", usuarioLogado?.tipo);
+console.log("É ADMIN:", ehAdministrador);
 
   // =====================================================
   // CARREGAR EMPRÉSTIMOS
@@ -144,7 +159,9 @@ export default function Emprestimos({
       emprestimo.status !== "ATIVO" ||
       !emprestimo.data_prevista
     ) {
+
       return false;
+
     }
 
     return (
@@ -194,7 +211,9 @@ export default function Emprestimos({
 
 
       if (!correspondeBusca) {
+
         return false;
+
       }
 
 
@@ -277,10 +296,25 @@ export default function Emprestimos({
 
   const criarEmprestimo = async () => {
 
+    /*
+     * ADMINISTRADOR:
+     * usa o usuário escolhido no campo "Usuário responsável".
+     *
+     * BIBLIOTECÁRIO:
+     * não possui esse campo na tela e automaticamente
+     * utiliza o próprio usuário logado.
+     */
+
+    const usuarioResponsavel =
+      ehBibliotecario
+        ? usuarioLogado?.id
+        : id_usuarios;
+
+
     if (
       !id_leitores ||
       !id_livros ||
-      !id_usuarios ||
+      !usuarioResponsavel ||
       !data_emprestimo
     ) {
 
@@ -304,7 +338,7 @@ export default function Emprestimos({
           Number(id_livros),
 
         id_usuarios:
-          Number(id_usuarios),
+          Number(usuarioResponsavel),
 
         data_emprestimo:
           new Date(
@@ -314,14 +348,14 @@ export default function Emprestimos({
         data_prevista:
           data_prevista
             ? new Date(
-              `${data_prevista}T00:00:00.000Z`
-            ).toISOString()
+                `${data_prevista}T00:00:00.000Z`
+              ).toISOString()
             : null,
 
         data_devolucao:
           new Date(
             `${data_prevista ||
-            data_emprestimo
+              data_emprestimo
             }T00:00:00.000Z`
           ).toISOString()
 
@@ -378,6 +412,7 @@ export default function Emprestimos({
       setErro(
         error.response?.data?.message ||
         error.response?.data?.error ||
+        error.response?.data?.erro ||
         "Erro ao criar empréstimo."
       );
 
@@ -653,6 +688,7 @@ export default function Emprestimos({
       alert(
         error.response?.data?.message ||
         error.response?.data?.error ||
+        error.response?.data?.erro ||
         "Erro ao quitar multa."
       );
 
@@ -679,9 +715,10 @@ export default function Emprestimos({
   const estiloFiltro = (ativo) => ({
 
     border:
-      `1px solid ${ativo
-        ? cores.carimbo
-        : cores.linha
+      `1px solid ${
+        ativo
+          ? cores.carimbo
+          : cores.linha
       }`,
 
     background:
@@ -717,6 +754,7 @@ export default function Emprestimos({
 
       <Cabecalho
         titulo="Empréstimos"
+
         subtitulo={
           `${emprestimos.length} empréstimos cadastrados`
         }
@@ -740,13 +778,14 @@ export default function Emprestimos({
           </BotaoPrincipal>
 
         }
-
       />
 
 
       <BarraBusca
         valor={busca}
+
         onChange={setBusca}
+
         placeholder="Buscar por livro, leitor ou status"
       />
 
@@ -792,6 +831,7 @@ export default function Emprestimos({
 
           <AlertTriangle
             size={12}
+
             style={{
               verticalAlign:
                 "middle",
@@ -844,10 +884,15 @@ export default function Emprestimos({
       <div
         style={{
           marginTop: 16,
-          background: cores.papel,
+
+          background:
+            cores.papel,
+
           border:
             `1px solid ${cores.linha}`,
+
           borderRadius: 6,
+
           padding: "4px 20px"
         }}
       >
@@ -895,6 +940,7 @@ export default function Emprestimos({
               estaAtrasado(emprestimo) &&
               filtroMulta !== "PAGAS";
 
+
             return (
 
               <LinhaItem
@@ -926,9 +972,14 @@ export default function Emprestimos({
                   <div
                     style={{
                       display: "flex",
-                      alignItems: "center",
+
+                      alignItems:
+                        "center",
+
                       gap: 10,
-                      flexWrap: "wrap"
+
+                      flexWrap:
+                        "wrap"
                     }}
                   >
 
@@ -979,14 +1030,19 @@ export default function Emprestimos({
 
                       <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
+                          display:
+                            "flex",
+
+                          alignItems:
+                            "center",
+
                           gap: 5,
 
                           border:
-                            `1px solid ${multaPaga
-                              ? cores.verdeOk
-                              : cores.carimbo
+                            `1px solid ${
+                              multaPaga
+                                ? cores.verdeOk
+                                : cores.carimbo
                             }`,
 
                           background:
@@ -1045,10 +1101,17 @@ export default function Emprestimos({
 
                   <div
                     style={{
-                      display: "flex",
-                      alignItems: "center",
+                      display:
+                        "flex",
+
+                      alignItems:
+                        "center",
+
                       gap: 4,
-                      flexWrap: "wrap",
+
+                      flexWrap:
+                        "wrap",
+
                       justifyContent:
                         "flex-end"
                     }}
@@ -1056,8 +1119,11 @@ export default function Emprestimos({
 
                     {emprestimo.status ===
                       "ATIVO" &&
+
                       atrasado &&
+
                       possuiMulta &&
+
                       !multaPaga && (
 
                         <button
@@ -1087,6 +1153,7 @@ export default function Emprestimos({
 
                           <DollarSign
                             size={15}
+
                             color={
                               cores.carimbo
                             }
@@ -1099,6 +1166,7 @@ export default function Emprestimos({
 
                     {emprestimo.status ===
                       "ATIVO" &&
+
                       !atrasado && (
 
                         <button
@@ -1117,6 +1185,7 @@ export default function Emprestimos({
 
                           <CheckCircle2
                             size={15}
+
                             color={
                               cores.verdeOk
                             }
@@ -1146,6 +1215,7 @@ export default function Emprestimos({
 
                           <XCircle
                             size={15}
+
                             color={
                               cores.carimbo
                             }
@@ -1380,7 +1450,8 @@ export default function Emprestimos({
 
                   borderRadius: 6,
 
-                  display: "flex",
+                  display:
+                    "flex",
 
                   alignItems:
                     "center",
@@ -1492,6 +1563,7 @@ export default function Emprestimos({
               {Number(
                 multaSelecionada.multa || 0
               ) > 0 &&
+
                 multaSelecionada.status_multa ===
                 "PENDENTE" && (
 
@@ -1521,8 +1593,12 @@ export default function Emprestimos({
 
                   <div
                     style={{
-                      display: "flex",
-                      alignItems: "center",
+                      display:
+                        "flex",
+
+                      alignItems:
+                        "center",
+
                       justifyContent:
                         "center",
 
@@ -1640,6 +1716,7 @@ export default function Emprestimos({
 
 
               {livros
+
                 .filter(
                   (livro) =>
                     Number(
@@ -1675,52 +1752,66 @@ export default function Emprestimos({
           </Campo>
 
 
-          <Campo
-            label="Usuário responsável"
-          >
+          {/* =====================================================
+              USUÁRIO RESPONSÁVEL
 
-            <select
-              style={inputStyle}
+              ADMINISTRADOR:
+              aparece normalmente e pode escolher qualquer usuário.
 
-              value={id_usuarios}
+              BIBLIOTECÁRIO:
+              o campo não aparece.
+          ===================================================== */}
 
-              onChange={(e) =>
-                setIdUsuarios(
-                  e.target.value
-                )
-              }
+          {ehAdministrador && (
+
+            <Campo
+              label="Usuário responsável"
             >
 
-              <option value="">
+              <select
+                style={inputStyle}
 
-                Selecione o usuário
+                value={id_usuarios}
 
-              </option>
+                onChange={(e) =>
+                  setIdUsuarios(
+                    e.target.value
+                  )
+                }
+              >
+
+                <option value="">
+
+                  Selecione o usuário
+
+                </option>
 
 
-              {usuarios.map(
-                (usuario) => (
+                {usuarios.map(
+                  (usuario) => (
 
-                  <option
-                    key={
-                      usuario.id_usuarios
-                    }
+                    <option
+                      key={
+                        usuario.id_usuarios
+                      }
 
-                    value={
-                      usuario.id_usuarios
-                    }
-                  >
+                      value={
+                        usuario.id_usuarios
+                      }
+                    >
 
-                    {usuario.nome}
+                      {usuario.nome}
 
-                  </option>
+                    </option>
 
-                )
-              )}
+                  )
+                )}
 
-            </select>
+              </select>
 
-          </Campo>
+            </Campo>
+
+          )}
 
 
           <Campo

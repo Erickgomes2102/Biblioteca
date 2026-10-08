@@ -3,6 +3,7 @@ import api from "./services/api";
 import { cores, fontUI } from "./empréstimos/styles/tema";
 import Login from "./pages/login";
 import PerfilUsuario from "./pages/PerfilUsuario";
+import Administracao from "./Administracao";
 import Sidebar from "./layout/Sidebar";
 import Dashboard from "./dashboard/Dashboard";
 import Livros from "./livros/Livros";
@@ -28,6 +29,7 @@ export default function App() {
   const [categorias, setCategorias] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
 
+
   useEffect(() => {
 
     if (!logado) {
@@ -42,15 +44,13 @@ export default function App() {
           respostaLivros,
           respostaLeitores,
           respostaEmprestimos,
-          respostaCategorias,
-          respostaUsuarios
+          respostaCategorias
         ] = await Promise.all([
 
           api.get("/ListarLivros"),
           api.get("/ListarLeitores"),
           api.get("/ListarEmprestimo"),
-          api.get("/ListarCategorias"),
-          api.get("/ListarUsuarios")
+          api.get("/ListarCategorias")
 
         ]);
 
@@ -58,12 +58,44 @@ export default function App() {
         setLeitores(respostaLeitores.data);
         setEmprestimos(respostaEmprestimos.data);
         setCategorias(respostaCategorias.data);
-        setUsuarios(respostaUsuarios.data);
+
+
+        /*
+         * USUÁRIOS
+         *
+         * Essa rota é exclusiva para Administradores.
+         * Bibliotecários não fazem essa requisição.
+         */
+
+        if (usuarioLogado?.tipo === "ADMINISTRADOR") {
+
+          try {
+
+            const respostaUsuarios =
+              await api.get("/Administracao/Usuarios");
+
+            setUsuarios(respostaUsuarios.data);
+
+          } catch (error) {
+
+            console.log(
+              error.response?.data ||
+              error.message
+            );
+
+          }
+
+        } else {
+
+          setUsuarios([]);
+
+        }
 
       } catch (error) {
 
         console.log(
-          error.response?.data || error.message
+          error.response?.data ||
+          error.message
         );
 
       }
@@ -72,39 +104,88 @@ export default function App() {
 
     carregarDados();
 
-  }, [logado]);
+  }, [logado, usuarioLogado]);
+
 
   function logout() {
+
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
+
     setLogado(false);
     setUsuarioLogado(null);
     setAba("dashboard");
+
   }
+
 
   function atualizarUsuarioLogado(novoUsuario) {
+
     setUsuarioLogado(novoUsuario);
-    localStorage.setItem("usuario", JSON.stringify(novoUsuario));
+
+    localStorage.setItem(
+      "usuario",
+      JSON.stringify(novoUsuario)
+    );
+
   }
 
+
   async function excluirContaLogada() {
+
     const confirmar = window.confirm(
       "Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita."
     );
-    if (!confirmar || !usuarioLogado) return;
+
+    if (!confirmar || !usuarioLogado) {
+      return;
+    }
 
     try {
-      await api.delete(`/ExcluirUsuario/${usuarioLogado.id}`);
+
+      await api.delete(
+        `/ExcluirUsuario/${usuarioLogado.id}`
+      );
+
       logout();
+
     } catch (error) {
-      console.log(error.response?.data || error.message);
+
+      console.log(
+        error.response?.data ||
+        error.message
+      );
+
       alert(
         error.response?.data?.error ||
         error.response?.data?.message ||
         "Não foi possível excluir a conta."
       );
+
     }
+
   }
+
+
+  /*
+   * Impede que a aba de Administração
+   * fique acessível para Bibliotecários,
+   * mesmo que o estado da aba seja alterado.
+   */
+
+  useEffect(() => {
+
+    if (
+      aba === "administracao" &&
+      usuarioLogado?.tipo !== "ADMINISTRADOR"
+    ) {
+
+      setAba("dashboard");
+
+    }
+
+  }, [aba, usuarioLogado]);
+
 
   return (
 
@@ -138,6 +219,7 @@ export default function App() {
           usuario={usuarioLogado}
         />
 
+
         <main
           style={{
             flex: 1,
@@ -149,31 +231,49 @@ export default function App() {
           }}
         >
 
+          {/* DASHBOARD */}
+
           {aba === "dashboard" && (
+
             <Dashboard
               livros={livros}
               leitores={leitores}
               emprestimos={emprestimos}
             />
+
           )}
 
+
+          {/* LIVROS */}
+
           {aba === "livros" && (
+
             <Livros
               livros={livros}
               setLivros={setLivros}
               categorias={categorias}
             />
+
           )}
 
+
+          {/* LEITORES */}
+
           {aba === "leitores" && (
+
             <Leitores
               leitores={leitores}
               setLeitores={setLeitores}
               usuarios={usuarios}
             />
+
           )}
 
+
+          {/* EMPRÉSTIMOS */}
+
           {aba === "emprestimos" && (
+
             <Emprestimos
               livros={livros}
               setLivros={setLivros}
@@ -181,32 +281,60 @@ export default function App() {
               emprestimos={emprestimos}
               setEmprestimos={setEmprestimos}
               usuarios={usuarios}
+              usuarioLogado={usuarioLogado}
             />
+
           )}
 
+
+          {/* PERFIL */}
+
           {aba === "perfil" && usuarioLogado && (
+
             <PerfilUsuario
               usuario={usuarioLogado}
               onAtualizar={atualizarUsuarioLogado}
               onExcluido={logout}
             />
+
+          )}
+
+
+          {/* ADMINISTRAÇÃO */}
+
+          {aba === "administracao" &&
+            usuarioLogado?.tipo === "ADMINISTRADOR" && (
+
+            <Administracao
+              usuarioLogado={usuarioLogado}
+              usuarios={usuarios}
+              setUsuarios={setUsuarios}
+            />
+
           )}
 
         </main>
 
       </div>
 
+
       {/* LOGIN */}
 
       {!logado && (
+
         <Login
           onLogin={(usuario) => {
+
             setUsuarioLogado(usuario);
             setLogado(true);
+
           }}
         />
+
       )}
 
     </div>
+
   );
+
 }
