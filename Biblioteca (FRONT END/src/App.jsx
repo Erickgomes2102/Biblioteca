@@ -9,7 +9,8 @@ import Dashboard from "./dashboard/Dashboard";
 import Livros from "./livros/Livros";
 import Leitores from "./leitores/Leitores";
 import Emprestimos from "./emprestimos/Emprestimos";
-
+import ChatFlutuante from "./components/comum/chat/ChatFlutuante";
+import { desconectarChat } from "./services/chatSocket";
 export default function App() {
 
   const [logado, setLogado] = useState(
@@ -108,6 +109,7 @@ export default function App() {
 
 
   function logout() {
+    desconectarChat();
 
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
@@ -115,7 +117,6 @@ export default function App() {
     setLogado(false);
     setUsuarioLogado(null);
     setAba("dashboard");
-
   }
 
 
@@ -307,19 +308,24 @@ export default function App() {
           {aba === "administracao" &&
             usuarioLogado?.tipo === "ADMINISTRADOR" && (
 
-            <Administracao
-              usuarioLogado={usuarioLogado}
-              usuarios={usuarios}
-              setUsuarios={setUsuarios}
-            />
+              <Administracao
+                usuarioLogado={usuarioLogado}
+                usuarios={usuarios}
+                setUsuarios={setUsuarios}
+              />
 
-          )}
+            )}
 
         </main>
 
       </div>
 
 
+      {logado && usuarioLogado && (
+        <ChatFlutuante
+          usuarioLogado={usuarioLogado}
+        />
+      )}
       {/* LOGIN */}
 
       {!logado && (

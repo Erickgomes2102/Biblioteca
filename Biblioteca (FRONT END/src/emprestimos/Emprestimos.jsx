@@ -6,7 +6,8 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  DollarSign
+  DollarSign,
+  Trash2
 } from "lucide-react";
 
 import api from "../services/api";
@@ -155,31 +156,44 @@ export default function Emprestimos({
   // =====================================================
   // ATRASO E MULTA
   // =====================================================
-
-  const estaAtrasado = (emprestimo) => {
-    if (
-      emprestimo.status !== "ATIVO" ||
-      !emprestimo.data_prevista
-    ) {
-      return false;
-    }
-
-    const prevista = new Date(emprestimo.data_prevista);
-    const hoje = new Date();
-
-    prevista.setHours(0, 0, 0, 0);
-    hoje.setHours(0, 0, 0, 0);
-
-    return hoje > prevista;
-  };
-
   const temMulta = (emprestimo) => {
-    // Empréstimo cancelado nunca deve aparecer como multa no front.
     if (emprestimo.status === "CANCELADO") {
       return false;
     }
 
-    return Number(emprestimo.multa || 0) > 0;
+    const status = (
+      emprestimo.multaRegistro?.status ||
+      emprestimo.status_multa ||
+      ""
+    ).toUpperCase();
+
+    return (
+      Boolean(emprestimo.multaRegistro) ||
+      status === "PENDENTE" ||
+      status === "PAGA"
+    );
+  };
+
+    const estaAtrasado = (emprestimo) => {
+    if (
+      !emprestimo.data_prevista ||
+      emprestimo.status !== "ATIVO"
+    ) {
+      return false;
+    }
+
+    const dataPrevista = new Date(emprestimo.data_prevista);
+
+    if (Number.isNaN(dataPrevista.getTime())) {
+      return false;
+    }
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    dataPrevista.setHours(0, 0, 0, 0);
+
+    return dataPrevista < hoje;
   };
 
   const statusMulta = (emprestimo) => {
@@ -187,12 +201,43 @@ export default function Emprestimos({
       return "CANCELADA";
     }
 
+    if (!temMulta(emprestimo)) {
+      return "SEM_MULTA";
+    }
+
     return (
       emprestimo.multaRegistro?.status ||
-      emprestimo.status_multa ||
-      "SEM_MULTA"
-    );
+      emprestimo.status_multa
+    ).toUpperCase();
   };
+
+  const aplicarMulta = async (id_emprestimo) => {
+    if (processandoDevolucao) {
+      return;
+    }
+
+    setProcessandoDevolucao(true);
+
+    try {
+      await api.patch(`/DevolverLivro/${id_emprestimo}`, { penalidade: "MULTA", apenas_multa: true });
+
+      await carregarEmprestimos();
+      setEmprestimoParaDevolver(null);
+
+
+    } catch (error) {
+      console.error("Erro ao aplicar multa:", error.response?.data || error.message);
+
+      alert(
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.response?.data?.erro ||
+        "Erro ao aplicar multa"
+      );
+    } finally {
+      setProcessandoDevolucao(false)
+    }
+  }
 
   // =====================================================
   // FILTRAR EMPRÉSTIMOS
@@ -327,12 +372,12 @@ export default function Emprestimos({
         listaAtual.map((livro) =>
           Number(livro.id_livros) === Number(id_livros)
             ? {
-                ...livro,
-                quantidade: Math.max(
-                  0,
-                  Number(livro.quantidade) - 1
-                )
-              }
+              ...livro,
+              quantidade: Math.max(
+                0,
+                Number(livro.quantidade) - 1
+              )
+            }
             : livro
         )
       );
@@ -347,9 +392,9 @@ export default function Emprestimos({
 
       setErro(
         error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.response?.data?.erro ||
-          "Erro ao criar empréstimo."
+        error.response?.data?.error ||
+        error.response?.data?.erro ||
+        "Erro ao criar empréstimo."
       );
     }
   };
@@ -412,11 +457,11 @@ export default function Emprestimos({
         setLivros((listaAtual) =>
           listaAtual.map((livro) =>
             Number(livro.id_livros) ===
-            Number(emprestimoOriginal.id_livros)
+              Number(emprestimoOriginal.id_livros)
               ? {
-                  ...livro,
-                  quantidade: Number(livro.quantidade) + 1
-                }
+                ...livro,
+                quantidade: Number(livro.quantidade) + 1
+              }
               : livro
           )
         );
@@ -443,9 +488,9 @@ export default function Emprestimos({
 
       alert(
         error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.response?.data?.erro ||
-          "Erro ao devolver livro."
+        error.response?.data?.error ||
+        error.response?.data?.erro ||
+        "Erro ao devolver livro."
       );
     } finally {
       setProcessandoDevolucao(false);
@@ -485,11 +530,11 @@ export default function Emprestimos({
         setLivros((listaAtual) =>
           listaAtual.map((livro) =>
             Number(livro.id_livros) ===
-            Number(emprestimoOriginal.id_livros)
+              Number(emprestimoOriginal.id_livros)
               ? {
-                  ...livro,
-                  quantidade: Number(livro.quantidade) + 1
-                }
+                ...livro,
+                quantidade: Number(livro.quantidade) + 1
+              }
               : livro
           )
         );
@@ -502,9 +547,9 @@ export default function Emprestimos({
 
       alert(
         error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.response?.data?.erro ||
-          "Erro ao cancelar empréstimo."
+        error.response?.data?.error ||
+        error.response?.data?.erro ||
+        "Erro ao cancelar empréstimo."
       );
     }
   };
@@ -513,51 +558,77 @@ export default function Emprestimos({
   // CONSULTAR MULTA
   // =====================================================
 
- 
+
 
   // =====================================================
   // QUITAR MULTA
   // =====================================================
 
-  const quitarMulta = async (id_emprestimo) => {
-    try {
-      await api.patch(`/PagarMulta/${id_emprestimo}`);
+const quitarMulta = async (id_emprestimo) => {
+  try {
+    const emprestimoOriginal = emprestimos.find(
+      (item) =>
+        Number(item.id_emprestimo) === Number(id_emprestimo)
+    );
 
-      await carregarEmprestimos();
+    const resposta = await api.patch(
+      `/PagarMulta/${id_emprestimo}`
+    );
 
-      if (
-        Number(multaSelecionada?.id_emprestimo) ===
-        Number(id_emprestimo)
-      ) {
-        const resposta = await api.get(
-          `/ConsultarMulta/${id_emprestimo}`
-        );
+    await carregarEmprestimos();
 
-        setMultaSelecionada(resposta.data);
-      }
-    } catch (error) {
-      console.error(
-        "Erro ao quitar multa:",
-        error.response?.data || error.message
-      );
-
-      alert(
-        error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.response?.data?.erro ||
-          "Erro ao quitar multa."
+    // Atualiza o estoque local somente se o backend
+    // confirmou que o livro foi devolvido nesta operação.
+    if (
+      resposta.data?.livro_devolvido === true &&
+      emprestimoOriginal &&
+      typeof setLivros === "function"
+    ) {
+      setLivros((listaAtual) =>
+        listaAtual.map((livro) =>
+          Number(livro.id_livros) ===
+          Number(emprestimoOriginal.id_livros)
+            ? {
+                ...livro,
+                quantidade: Number(livro.quantidade) + 1
+              }
+            : livro
+        )
       );
     }
-  };
+
+    if (
+      Number(multaSelecionada?.id_emprestimo) ===
+      Number(id_emprestimo)
+    ) {
+      const consulta = await api.get(
+        `/ConsultarMulta/${id_emprestimo}`
+      );
+
+      setMultaSelecionada(consulta.data);
+    }
+  } catch (error) {
+    console.error(
+      "Erro ao quitar multa:",
+      error.response?.data || error.message
+    );
+
+    alert(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.response?.data?.erro ||
+      "Erro ao quitar multa."
+    );
+  }
+};
 
   // =====================================================
   // ESTILO DOS FILTROS
   // =====================================================
 
   const estiloFiltro = (ativo) => ({
-    border: `1px solid ${
-      ativo ? cores.carimbo : cores.linha
-    }`,
+    border: `1px solid ${ativo ? cores.carimbo : cores.linha
+      }`,
     background: ativo ? cores.carimbo : cores.papel,
     color: ativo ? "#fff" : cores.tintaSuave,
     borderRadius: 5,
@@ -567,6 +638,40 @@ export default function Emprestimos({
     fontWeight: ativo ? 600 : 400
   });
 
+  const excluirEmprestimo = async (emprestimo) => {
+    if (!ehAdministrador) {
+      return;
+
+    }
+
+    const confirmar = window.confirm(`Deseja excluir permanentemente o empréstimo de "${obterLivro(emprestimo)?.titulo || "livro não identificado"}"`);
+
+    if (!confirmar) {
+      return
+    }
+
+    try { 
+      await api.delete(`/ExcluirEmprestimo/${emprestimo.id_emprestimo}`)
+      await carregarEmprestimos();
+
+      if (Number(multaSelecionada?.id_emprestimo) === Number(emprestimo.id_emprestimo)) { setMultaSelecionada(null)}
+    } 
+      
+     catch (error) {
+
+      console.error(
+        "Erro ao excluir empréstimo:", error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.response?.data?.erro || 
+        "Erro ao excluir empréstimo"
+      )
+
+    }
+  }
   // =====================================================
   // INTERFACE
   // =====================================================
@@ -693,8 +798,8 @@ export default function Emprestimos({
                 )}` +
                 (suspenso
                   ? ` · Suspenso até ${formatarData(
-                      leitor.suspenso_ate
-                    )}`
+                    leitor.suspenso_ate
+                  )}`
                   : "")
               }
               selo={
@@ -747,11 +852,10 @@ export default function Emprestimos({
                         display: "flex",
                         alignItems: "center",
                         gap: 5,
-                        border: `1px solid ${
-                          multaPaga
-                            ? cores.verdeOk
-                            : cores.carimbo
-                        }`,
+                        border: `1px solid ${multaPaga
+                          ? cores.verdeOk
+                          : cores.carimbo
+                          }`,
                         background: "transparent",
                         color: multaPaga
                           ? cores.verdeOk
@@ -774,74 +878,80 @@ export default function Emprestimos({
                   )}
                 </div>
               }
-              acao={
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    flexWrap: "wrap",
-                    justifyContent: "flex-end"
-                  }}
-                >
+              
+acao={
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 4,
+      flexWrap: "wrap",
+      justifyContent: "flex-end"
+    }}
+  >
+    {emprestimo.status === "ATIVO" &&
+      possuiMulta &&
+      statusAtualMulta === "PENDENTE" && (
+        <button
+          type="button"
+          onClick={() => quitarMulta(emprestimo.id_emprestimo)}
+          style={botaoIcone}
+          title="Pagar multa"
+        >
+          <DollarSign size={15} color={cores.carimbo} />
+        </button>
+      )}
 
-                  {emprestimo.status === "ATIVO" &&
-                    possuiMulta &&
-                    !multaPaga && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          quitarMulta(
-                            emprestimo.id_emprestimo
-                          )
-                        }
-                        style={botaoIcone}
-                        title="Pagar multa"
-                      >
-                        <DollarSign
-                          size={15}
-                          color={cores.carimbo}
-                        />
-                      </button>
-                    )}
+    {emprestimo.status === "ATIVO" &&
+      !possuiMulta && (
+        <>
+          <button
+            type="button"
+            onClick={() => iniciarDevolucao(emprestimo)}
+            style={botaoIcone}
+            title={
+              atrasado
+                ? "Escolher penalidade"
+                : "Devolver livro"
+            }
+          >
+            <CheckCircle2
+              size={15}
+              color={cores.verdeOk}
+            />
+          </button>
 
-                  {emprestimo.status === "ATIVO" && (
-                    <button
-                      type="button"
-                      onClick={() => iniciarDevolucao(emprestimo)}
-                      style={botaoIcone}
-                      title={
-                        atrasado
-                          ? "Devolver e escolher multa ou suspensão"
-                          : "Devolver livro"
-                      }
-                    >
-                      <CheckCircle2
-                        size={15}
-                        color={cores.verdeOk}
-                      />
-                    </button>
-                  )}
-
-                  {emprestimo.status === "ATIVO" && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        cancelarEmprestimo(
-                          emprestimo.id_emprestimo
-                        )
-                      }
-                      style={botaoIcone}
-                      title="Cancelar empréstimo"
-                    >
-                      <XCircle
-                        size={15}
-                        color={cores.carimbo}
-                      />
-                    </button>
-                  )}
-                </div>
+          {!atrasado && (
+            <button
+              type="button"
+              onClick={() =>
+                cancelarEmprestimo(emprestimo.id_emprestimo)
               }
+              style={botaoIcone}
+              title="Cancelar empréstimo"
+            >
+              <XCircle
+                size={15}
+                color={cores.carimbo}
+              />
+            </button>
+          )}
+        </>
+      )}
+
+    {ehAdministrador &&
+      emprestimo.status !== "ATIVO" && (
+        <button
+          type="button"
+          onClick={() => excluirEmprestimo(emprestimo)}
+          style={botaoIcone}
+          title="Excluir empréstimo permanentemente"
+        >
+          <Trash2 size={15} color={cores.carimbo} />
+        </button>
+      )}
+  </div>
+}
             />
           );
         })}
@@ -915,16 +1025,15 @@ export default function Emprestimos({
           >
             <BotaoPrincipal
               onClick={() =>
-                devolverLivro(
+                aplicarMulta(
                   emprestimoParaDevolver.id_emprestimo,
-                  "MULTA"
                 )
               }
               full
               disabled={processandoDevolucao}
             >
               <DollarSign size={15} />
-              Aplicar multa e devolver
+              Aplicar multa
             </BotaoPrincipal>
 
             <BotaoPrincipal
@@ -986,7 +1095,7 @@ export default function Emprestimos({
                   {typeof multaSelecionada.livro === "string"
                     ? multaSelecionada.livro
                     : multaSelecionada.livro?.titulo ||
-                      "Livro não encontrado"}
+                    "Livro não encontrado"}
                 </p>
               </div>
 
@@ -996,7 +1105,7 @@ export default function Emprestimos({
                   {typeof multaSelecionada.leitor === "string"
                     ? multaSelecionada.leitor
                     : multaSelecionada.leitor?.nome ||
-                      "Leitor não encontrado"}
+                    "Leitor não encontrado"}
                 </p>
               </div>
 
@@ -1145,8 +1254,8 @@ export default function Emprestimos({
                     {leitor.nome}
                     {suspenso
                       ? ` (suspenso até ${formatarData(
-                          leitor.suspenso_ate
-                        )})`
+                        leitor.suspenso_ate
+                      )})`
                       : ""}
                   </option>
                 );
@@ -1177,26 +1286,28 @@ export default function Emprestimos({
             </select>
           </Campo>
 
-          {ehAdministrador && (
-            <Campo label="Usuário responsável">
-              <select
-                style={inputStyle}
-                value={id_usuarios}
-                onChange={(e) => setIdUsuarios(e.target.value)}
-              >
-                <option value="">Selecione o usuário</option>
+          
+{ehAdministrador && (
+  <Campo label="Usuário responsável">
+    <select
+      style={inputStyle}
+      value={id_usuarios}
+      onChange={(e) => setIdUsuarios(e.target.value)}
+    >
+      <option value="">Selecione o usuário</option>
 
-                {usuarios.map((usuario) => (
-                  <option
-                    key={usuario.id_usuarios}
-                    value={usuario.id_usuarios}
-                  >
-                    {usuario.nome}
-                  </option>
-                ))}
-              </select>
-            </Campo>
-          )}
+      {usuarios.map((usuario) => (
+        <option
+          key={usuario.id_usuarios}
+          value={usuario.id_usuarios}
+        >
+          {usuario.nome}
+        </option>
+      ))}
+    </select>
+  </Campo>
+)}
+
 
           <Campo label="Data do empréstimo">
             <input

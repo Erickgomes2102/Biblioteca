@@ -1,5 +1,6 @@
 import prismaClient from "../Prisma/PrismaClient";
 import { hash } from "bcryptjs";
+import { validarEmail } from "../Middleware/validarEmail";
 
 interface cadastrarUsuario {
     nome: string,
@@ -27,6 +28,10 @@ class usuariosServices {
         senha,
         tipo
     }: cadastrarUsuario) {
+        if(!validarEmail(email)) {
+            throw new Error( "Informe um e-mail válido, contendo @ e terminando com .com.")
+        }
+
 
         if (
             tipo !== "BIBLIOTECÁRIO" &&
@@ -180,6 +185,10 @@ class usuariosServices {
 
         if (dados.email !== undefined) {
 
+            if(!validarEmail(dados.email)) {
+                throw new Error("Informe um e-mail válido, contendo @ e terminando em .com.")
+            }
+
             const emailExistente =
                 await prismaClient.usuario.findFirst({
                     where: {
@@ -308,6 +317,97 @@ class usuariosServices {
 
         return usuarioAtualizado;
     }
+
+
+async editarMeuPerfil(
+    id_usuarios: number,
+    dados: {
+        nome?: string;
+        email?: string;
+        senha?: string;
+        avatar?: string | null;
+    }
+) {
+    const usuario = await prismaClient.usuario.findUnique({
+        where: {
+            id_usuarios
+        }
+    });
+
+    if (!usuario) {
+        throw new Error("Usuário não encontrado");
+    }
+
+    // =================================================
+    // VALIDAR EMAIL
+    // =================================================
+
+    if (dados.email !== undefined) {
+        if (!validarEmail(dados.email)) {
+            throw new Error(
+                "Informe um e-mail válido, contendo @ e terminando em .com."
+            );
+        }
+
+        const emailExistente = await prismaClient.usuario.findFirst({
+            where: {
+                email: dados.email,
+                NOT: {
+                    id_usuarios
+                }
+            }
+        });
+
+        if (emailExistente) {
+            throw new Error("Email já cadastrado em outro usuário");
+        }
+    }
+
+    // =================================================
+    // PREPARAR DADOS
+    // =================================================
+
+    const dadosAtualizacao: {
+        nome?: string;
+        email?: string;
+        senha?: string;
+        avatar?: string | null;
+    } = {};
+
+    if (dados.nome !== undefined) {
+        dadosAtualizacao.nome = dados.nome;
+    }
+
+    if (dados.email !== undefined) {
+        dadosAtualizacao.email = dados.email;
+    }
+
+    if (dados.avatar !== undefined) {
+        dadosAtualizacao.avatar = dados.avatar;
+    }
+
+    if (dados.senha !== undefined && dados.senha.trim() !== "") {
+        dadosAtualizacao.senha = await hash(dados.senha, 8);
+    }
+
+    // =================================================
+    // ATUALIZAR PERFIL
+    // =================================================
+
+    return await prismaClient.usuario.update({
+        where: {
+            id_usuarios
+        },
+        data: dadosAtualizacao,
+        select: {
+            id_usuarios: true,
+            nome: true,
+            email: true,
+            tipo: true,
+            avatar: true
+        }
+    });
+}
 
 }
 

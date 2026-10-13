@@ -1,17 +1,55 @@
+
 import React from "react";
 import { cores } from "../../empréstimos/styles/tema";
-import { emojiDoAvatar } from "../../empréstimos/utils/avatares";
+import { UserRound } from "lucide-react";
+import { imagemDoAvatar } from "../../empréstimos/utils/avatares";
 
 const API_URL = "http://localhost:3334";
 
 export default function Avatar({ avatar, tamanho = 34 }) {
-  const ehImagem = avatar && !avatar.startsWith("avatar_");
+  const ehAvatarPredefinido =
+    typeof avatar === "string" && avatar.startsWith("avatar_");
 
-  const srcImagem = ehImagem
-    ? avatar.startsWith("http")
-      ? avatar
-      : `${API_URL}${avatar}`
+  const imagemPredefinida = ehAvatarPredefinido
+    ? imagemDoAvatar(avatar)
     : null;
+
+  const ehImagemPersonalizada =
+    typeof avatar === "string" &&
+    avatar.trim() !== "" &&
+    !ehAvatarPredefinido;
+
+  const srcImagem = imagemPredefinida
+    ? imagemPredefinida
+    : ehImagemPersonalizada
+      ? avatar.startsWith("http")
+        ? avatar
+        : `${API_URL}${avatar}`
+      : null;
+
+  if (!srcImagem) {
+    return (
+      <span
+        style={{
+          width: tamanho,
+          height: tamanho,
+          borderRadius: "50%",
+          overflow: "hidden",
+          background: cores.lataoClaro,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <UserRound
+          size={tamanho * 0.58}
+          strokeWidth={1.8}
+          color="#6B7280"
+        />
+      </span>
+    );
+  }
 
   return (
     <span
@@ -24,27 +62,25 @@ export default function Avatar({ avatar, tamanho = 34 }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: tamanho * 0.5,
         flexShrink: 0,
       }}
     >
-      {ehImagem ? (
-        <img
-          src={srcImagem}
-          alt="Avatar"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-          }}
-          onError={(e) => {
-            console.error("Erro ao carregar avatar:", srcImagem);
-          }}
-        />
-      ) : (
-        emojiDoAvatar(avatar)
-      )}
+      <img
+        src={srcImagem}
+        alt="Avatar do usuário"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          display: "block",
+        }}
+        onError={(e) => {
+          console.error("Erro ao carregar avatar:", srcImagem);
+          e.currentTarget.style.display = "none";
+          e.currentTarget.parentElement.style.background = "#E5E7EB";
+          e.currentTarget.parentElement.style.color = "#6B7280";
+        }}
+      />
     </span>
   );
 }

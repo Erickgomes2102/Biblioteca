@@ -1,4 +1,3 @@
-// FRONT-END: PerfilUsuario.jsx
 
 import React, { useRef, useState } from "react";
 import api from "../services/api";
@@ -8,6 +7,7 @@ import Cabecalho from "../components/comum/Cabecalho";
 import Campo from "../components/comum/Campo";
 import BotaoPrincipal from "../components/comum/BotaoPrincipal";
 import Avatar from "../components/comum/Avatar";
+import { Eye, EyeOff, UserRound } from "lucide-react";
 
 function extrairAvatarDaResposta(data, avatarAnterior) {
   if (!data) return avatarAnterior;
@@ -25,6 +25,34 @@ function extrairAvatarDaResposta(data, avatarAnterior) {
   );
 }
 
+function validarEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.com$/i.test(email.trim());
+}
+
+function mensagemErro(error, mensagemPadrao) {
+  const resposta = error.response?.data;
+
+  const mensagem =
+    resposta?.error ||
+    resposta?.message ||
+    resposta?.erro ||
+    resposta?.Dados ||
+    (typeof resposta === "string" ? resposta : null) ||
+    error.message ||
+    mensagemPadrao;
+
+  console.error("[PerfilUsuario] Erro na requisição:", {
+    mensagem,
+    status: error.response?.status,
+    resposta: error.response?.data,
+    url: error.config?.url,
+    metodo: error.config?.method,
+    dadosEnviados: error.config?.data,
+  });
+
+  return mensagem;
+}
+
 export default function PerfilUsuario({
   usuario,
   onAtualizar,
@@ -34,9 +62,7 @@ export default function PerfilUsuario({
 
   const [nome, setNome] = useState(usuario?.nome || "");
   const [email, setEmail] = useState(usuario?.email || "");
-  const [avatar, setAvatar] = useState(
-    usuario?.avatar || "avatar_1"
-  );
+  const [avatar, setAvatar] = useState(usuario?.avatar || "avatar_1");
 
   const [novaSenha, setNovaSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -64,6 +90,11 @@ export default function PerfilUsuario({
       return;
     }
 
+    if (!validarEmail(email)) {
+      setErro("Informe um e-mail válido, contendo @ e terminando em .com.");
+      return;
+    }
+
     if (!idUsuario) {
       setErro("ID do usuário não encontrado.");
       return;
@@ -88,30 +119,25 @@ export default function PerfilUsuario({
       );
 
       const usuarioResposta =
-        resposta.data?.usuario ||
-        resposta.data;
+        resposta.data?.usuario || resposta.data;
 
       const usuarioAtualizado = {
         ...usuario,
         ...dados,
         ...(usuarioResposta || {}),
-        avatar,
+        avatar: usuarioResposta?.avatar ?? avatar,
       };
 
       onAtualizar(usuarioAtualizado);
 
+      setNome(usuarioAtualizado.nome || "");
+      setEmail(usuarioAtualizado.email || "");
+      setAvatar(usuarioAtualizado.avatar || "avatar_1");
       setNovaSenha("");
       setSucesso("Perfil atualizado com sucesso!");
     } catch (error) {
-      console.log(
-        error.response?.data || error.message
-      );
-
       setErro(
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.response?.data?.erro ||
-        "Não foi possível salvar."
+        mensagemErro(error, "Não foi possível salvar as alterações.")
       );
     } finally {
       setSalvando(false);
@@ -124,7 +150,6 @@ export default function PerfilUsuario({
 
   const enviarFoto = async (e) => {
     const arquivo = e.target.files?.[0];
-
     e.target.value = "";
 
     if (!arquivo) return;
@@ -136,9 +161,7 @@ export default function PerfilUsuario({
     ];
 
     if (!tiposPermitidos.includes(arquivo.type)) {
-      setErro(
-        "Formato não permitido. Use JPG, PNG ou WEBP."
-      );
+      setErro("Formato não permitido. Use JPG, PNG ou WEBP.");
       return;
     }
 
@@ -157,12 +180,8 @@ export default function PerfilUsuario({
     setEnviandoFoto(true);
 
     const formData = new FormData();
-
     formData.append("avatar", arquivo);
-    formData.append(
-      "id_usuarios",
-      String(idUsuario)
-    );
+    formData.append("id_usuarios", String(idUsuario));
 
     try {
       const resposta = await api.post(
@@ -170,10 +189,7 @@ export default function PerfilUsuario({
         formData
       );
 
-      console.log(
-        "Resposta do upload de avatar:",
-        resposta.data
-      );
+      console.log("[PerfilUsuario] Upload de avatar:", resposta.data);
 
       const novoAvatar = extrairAvatarDaResposta(
         resposta.data,
@@ -189,15 +205,8 @@ export default function PerfilUsuario({
 
       setSucesso("Foto atualizada com sucesso!");
     } catch (error) {
-      console.log(
-        error.response?.data || error.message
-      );
-
       setErro(
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.response?.data?.erro ||
-        "Não foi possível enviar a foto."
+        mensagemErro(error, "Não foi possível enviar a foto.")
       );
     } finally {
       setEnviandoFoto(false);
@@ -214,9 +223,7 @@ export default function PerfilUsuario({
     }
 
     try {
-      await api.delete(
-        `/MeuPerfil/Avatar/${idUsuario}`
-      );
+      await api.delete(`/MeuPerfil/Avatar/${idUsuario}`);
 
       setAvatar("avatar_1");
 
@@ -227,15 +234,8 @@ export default function PerfilUsuario({
 
       setSucesso("Foto removida.");
     } catch (error) {
-      console.log(
-        error.response?.data || error.message
-      );
-
       setErro(
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.response?.data?.erro ||
-        "Não foi possível remover a foto."
+        mensagemErro(error, "Não foi possível remover a foto.")
       );
     }
   };
@@ -245,10 +245,8 @@ export default function PerfilUsuario({
       "Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita."
     );
 
-    if (!confirmar) return;
-
-    if (!idUsuario) {
-      setErro("ID do usuário não encontrado.");
+    if (!confirmar || !idUsuario) {
+      if (!idUsuario) setErro("ID do usuário não encontrado.");
       return;
     }
 
@@ -257,23 +255,12 @@ export default function PerfilUsuario({
     setSucesso("");
 
     try {
-      await api.delete(
-        `/ExcluirUsuario/${idUsuario}`
-      );
-
+      await api.delete(`/ExcluirUsuario/${idUsuario}`);
       onExcluido();
     } catch (error) {
-      console.log(
-        error.response?.data || error.message
-      );
-
       setErro(
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.response?.data?.erro ||
-        "Não foi possível excluir a conta."
+        mensagemErro(error, "Não foi possível excluir a conta.")
       );
-
       setExcluindo(false);
     }
   };
@@ -286,12 +273,7 @@ export default function PerfilUsuario({
         fontFamily: fontUI,
       }}
     >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 420,
-        }}
-      >
+      <div style={{ width: "100%", maxWidth: 420 }}>
         <Cabecalho
           titulo="Meu perfil"
           subtitulo="Edite seus dados ou exclua sua conta"
@@ -320,68 +302,50 @@ export default function PerfilUsuario({
                 borderRadius: "50%",
               }}
             >
-              <Avatar
-                avatar={avatar}
-                tamanho={72}
-              />
+              <Avatar avatar={avatar} tamanho={72} />
             </div>
 
             <div
               style={{
                 display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "center",
                 gap: 12,
                 marginTop: 8,
               }}
             >
-              <span
-                onClick={() =>
-                  setSeletorAberto((v) => !v)
-                }
-                style={{
-                  fontSize: 12,
-                  color: cores.latao,
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
+              <button
+                type="button"
+                onClick={() => setSeletorAberto((v) => !v)}
+                style={estiloLink(cores.latao)}
               >
-                {seletorAberto
-                  ? "Fechar ícones"
-                  : "Escolher ícone"}
-              </span>
+                {seletorAberto ? "Fechar avatares" : "Escolher avatar"}
+              </button>
 
-              <span
+              <button
+                type="button"
                 onClick={escolherArquivo}
-                style={{
-                  fontSize: 12,
-                  color: cores.latao,
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
+                disabled={enviandoFoto}
+                style={estiloLink(cores.latao)}
               >
-                {enviandoFoto
-                  ? "Enviando..."
-                  : "Enviar foto"}
-              </span>
+                {enviandoFoto ? "Enviando..." : "Enviar foto"}
+              </button>
 
               {fotoEhPersonalizada && (
-                <span
+                <button
+                  type="button"
                   onClick={removerFoto}
-                  style={{
-                    fontSize: 12,
-                    color: cores.carimbo,
-                    cursor: "pointer",
-                    fontWeight: 600,
-                  }}
+                  style={estiloLink(cores.carimbo)}
                 >
                   Remover foto
-                </span>
+                </button>
               )}
             </div>
 
             <input
               ref={inputArquivoRef}
               type="file"
-              accept="image/png, image/jpeg, image/webp"
+              accept="image/png,image/jpeg,image/webp"
               onChange={enviarFoto}
               style={{ display: "none" }}
             />
@@ -407,6 +371,8 @@ export default function PerfilUsuario({
                       setAvatar(a.codigo);
                       setSeletorAberto(false);
                     }}
+                    title={a.codigo}
+                    aria-label={`Selecionar ${a.codigo}`}
                     style={{
                       width: 36,
                       height: 36,
@@ -421,10 +387,24 @@ export default function PerfilUsuario({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      overflow: "hidden",
                     }}
-                    title={a.codigo}
                   >
-                    {a.emoji}
+                    {a.imagem ? (
+                      <img
+                        src={a.imagem}
+                        alt=""
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : a.emoji ? (
+                      a.emoji
+                    ) : (
+                      <UserRound size={20} />
+                    )}
                   </button>
                 ))}
               </div>
@@ -435,51 +415,40 @@ export default function PerfilUsuario({
             <input
               style={inputStyle}
               value={nome}
-              onChange={(e) =>
-                setNome(e.target.value)
-              }
+              onChange={(e) => setNome(e.target.value)}
+              required
             />
           </Campo>
 
           <Campo label="E-mail">
             <input
+              type="email"
               style={inputStyle}
               value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
             />
           </Campo>
 
           <Campo label="Nova senha (deixe em branco para não alterar)">
-            <div
-              style={{
-                position: "relative",
-              }}
-            >
+            <div style={{ position: "relative" }}>
               <input
-                type={
-                  mostrarSenha
-                    ? "text"
-                    : "password"
-                }
+                type={mostrarSenha ? "text" : "password"}
                 style={{
                   ...inputStyle,
                   paddingRight: 38,
                 }}
                 value={novaSenha}
-                onChange={(e) =>
-                  setNovaSenha(e.target.value)
-                }
-                placeholder="••••••••"
+                onChange={(e) => setNovaSenha(e.target.value)}
+                placeholder="Deixe em branco para manter a senha"
+                autoComplete="new-password"
               />
 
               <button
                 type="button"
-                onClick={() =>
-                  setMostrarSenha((v) => !v)
-                }
-                tabIndex={-1}
+                onClick={() => setMostrarSenha((v) => !v)}
+                aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
                 style={{
                   position: "absolute",
                   right: 8,
@@ -489,21 +458,23 @@ export default function PerfilUsuario({
                   border: "none",
                   cursor: "pointer",
                   padding: 4,
-                  fontSize: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {mostrarSenha
-                  ? "🙈"
-                  : "👁️"}
+                {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </Campo>
 
           {erro && (
             <p
+              role="alert"
               style={{
                 color: cores.carimbo,
                 fontSize: 13,
+                overflowWrap: "anywhere",
               }}
             >
               {erro}
@@ -512,6 +483,7 @@ export default function PerfilUsuario({
 
           {sucesso && (
             <p
+              role="status"
               style={{
                 color: cores.verdeOk,
                 fontSize: 13,
@@ -521,10 +493,7 @@ export default function PerfilUsuario({
             </p>
           )}
 
-          <BotaoPrincipal
-            onClick={() => {}}
-            full
-          >
+          <BotaoPrincipal onClick={() => {}} full>
             <button
               type="submit"
               disabled={salvando}
@@ -532,11 +501,11 @@ export default function PerfilUsuario({
                 all: "unset",
                 width: "100%",
                 textAlign: "center",
+                cursor: salvando ? "wait" : "pointer",
+                opacity: salvando ? 0.7 : 1,
               }}
             >
-              {salvando
-                ? "Salvando..."
-                : "Salvar alterações"}
+              {salvando ? "Salvando..." : "Salvar alterações"}
             </button>
           </BotaoPrincipal>
         </form>
@@ -571,15 +540,25 @@ export default function PerfilUsuario({
               padding: "9px 16px",
               fontSize: 13,
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: excluindo ? "wait" : "pointer",
             }}
           >
-            {excluindo
-              ? "Excluindo..."
-              : "Excluir minha conta"}
+            {excluindo ? "Excluindo..." : "Excluir minha conta"}
           </button>
         </div>
       </div>
     </div>
   );
+}
+
+function estiloLink(cor) {
+  return {
+    fontSize: 12,
+    color: cor,
+    cursor: "pointer",
+    fontWeight: 600,
+    border: "none",
+    padding: 0,
+    background: "none",
+  };
 }

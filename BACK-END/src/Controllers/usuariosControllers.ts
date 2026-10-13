@@ -170,6 +170,40 @@ class usuariosController {
         return res.json(resposta)
     }
 
+    async editarMeuPerfil(
+    req: Request,
+    res: Response
+) {
+    const id_usuarios = Number(req.usuarioId);
+
+    if (!Number.isInteger(id_usuarios) || id_usuarios <= 0) {
+        return res.status(401).json({
+            error: "Usuário não autenticado"
+        });
+    }
+
+    const {
+        nome,
+        email,
+        senha,
+        avatar
+    } = req.body;
+
+    const service = new usuariosServices();
+
+    const resposta = await service.editarMeuPerfil(
+        id_usuarios,
+        {
+            nome,
+            email,
+            senha,
+            avatar
+        }
+    );
+
+    return res.json(resposta);
+}
+
 }
 
 export { usuariosController }

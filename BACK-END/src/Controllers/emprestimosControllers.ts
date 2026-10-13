@@ -139,14 +139,14 @@ class emprestimosController {
             id_emprestimo
         } = req.params;
         
-        const { penalidade } = req.body;
+        const { penalidade, apenas_multa } = req.body;
 
         const service =
             new emprestimosServices();
 
         const resposta =
             await service.devolverLivro(
-                Number(id_emprestimo), penalidade
+                Number(id_emprestimo), penalidade, apenas_multa === true
             );
 
         return res.json(resposta);
@@ -271,6 +271,16 @@ class emprestimosController {
             );
 
         return res.json(resposta);
+    }
+
+    async excluirEmprestimo (req: Request, res: Response) {
+        const { id_emprestimo } = req.params;
+
+        const service = new emprestimosServices
+
+        const resposta = await service.excluirEmprestimo(Number(id_emprestimo))
+
+        return res.json(resposta)
     }
 }
 

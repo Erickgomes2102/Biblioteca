@@ -270,109 +270,60 @@ class emprestimosServices {
     // =====================================================
     // CALCULAR MULTA
     // =====================================================
-
-    async calcularMulta(id_emprestimo: number) {
-        const emprestimo =
-            await prismaClient.emprestimo.findUnique({
-                where: { id_emprestimo },
-                include: {
-                    multaRegistro: true
-                }
-            });
-
-        if (!emprestimo) {
-            throw new Error("Empréstimo não encontrado");
-        }
-
-        // Cancelados e devolvidos não recebem novos cálculos.
-        if (
-            emprestimo.status === "CANCELADO" ||
-            emprestimo.status === "DEVOLVIDO"
-        ) {
-            return Number(
-                emprestimo.multaRegistro?.valor ??
-                emprestimo.multa ??
-                0
-            );
-        }
-
-        if (emprestimo.status !== "ATIVO") {
-            throw new Error(
-                "Não é possível calcular multa para este empréstimo."
-            );
-        }
-
-        const multaExistente = emprestimo.multaRegistro;
-
-        // Uma multa paga nunca deve ser recalculada ou reaberta.
-        if (multaExistente?.status === "PAGA") {
-            return Number(multaExistente.valor);
-        }
-
-        // Multa cancelada não pode ser recriada automaticamente.
-        if (multaExistente?.status === "CANCELADA") {
-            return 0;
-        }
-
-        if (!emprestimo.data_prevista) {
-            await prismaClient.emprestimo.update({
-                where: { id_emprestimo },
-                data: { multa: 0 }
-            });
-
-            return 0;
-        }
-
-        const diasAtrasados = this.calcularDiasAtraso(
-            emprestimo.data_prevista,
-            new Date()
-        );
-
-        if (diasAtrasados <= 0) {
-            await prismaClient.emprestimo.update({
-                where: { id_emprestimo },
-                data: { multa: 0 }
-            });
-
-            return 0;
-        }
-
-        // R$ 2,00 por dia de atraso.
-        const valorMulta = diasAtrasados * 2;
-
-        await prismaClient.$transaction(async (tx) => {
-            if (multaExistente) {
-                await tx.multa.update({
-                    where: {
-                        id_multa: multaExistente.id_multa
-                    },
-                    data: {
-                        valor: valorMulta,
-                        dias_atraso: diasAtrasados,
-                        data_calculo: new Date(),
-                        status: "PENDENTE"
-                    }
-                });
-            } else {
-                await tx.multa.create({
-                    data: {
-                        valor: valorMulta,
-                        dias_atraso: diasAtrasados,
-                        status: "PENDENTE",
-                        id_emprestimo
-                    }
-                });
+async calcularMulta(id_emprestimo: number) {
+    const emprestimo =
+        await prismaClient.emprestimo.findUnique({
+            where: { id_emprestimo },
+            include: {
+                multaRegistro: true
             }
-
-            await tx.emprestimo.update({
-                where: { id_emprestimo },
-                data: { multa: valorMulta }
-            });
         });
 
-        return valorMulta;
+    if (!emprestimo) {
+        throw new Error("Empréstimo não encontrado");
     }
 
+    const multaExistente = emprestimo.multaRegistro;
+
+    if (
+        emprestimo.status === "CANCELADO" ||
+        emprestimo.status === "DEVOLVIDO"
+    ) {
+        return Number(
+            multaExistente?.valor ?? emprestimo.multa ?? 0
+        );
+    }
+
+    if (emprestimo.status !== "ATIVO") {
+        throw new Error(
+            "Não é possível calcular multa para este empréstimo."
+        );
+    }
+
+    if (
+        multaExistente?.status === "PAGA" ||
+        multaExistente?.status === "CANCELADA"
+    ) {
+        return Number(multaExistente.valor);
+    }
+
+    if (!emprestimo.data_prevista) {
+        return 0;
+    }
+
+    const diasAtrasados = this.calcularDiasAtraso(
+        emprestimo.data_prevista,
+        new Date()
+    );
+
+    if (diasAtrasados <= 0) {
+        return 0;
+    }
+
+    // Apenas calcula a estimativa.
+    // Não cria nem altera registros de multa.
+    return diasAtrasados * 2;
+}
     // =====================================================
     // APLICAR SUSPENSÃO POR ATRASO
     // =====================================================
@@ -431,206 +382,199 @@ class emprestimosServices {
     // DEVOLVER LIVRO
     // =====================================================
 
-    async devolverLivro(
-        id_emprestimo: number,
-        penalidade?: TipoPenalidade
+async devolverLivro(
+    id_emprestimo: number,
+    penalidade?: TipoPenalidade,
+    apenasMulta: boolean = false
+) {
+    const emprestimo =
+        await prismaClient.emprestimo.findUnique({
+            where: { id_emprestimo },
+            include: {
+                multaRegistro: true
+            }
+        });
+
+    if (!emprestimo) {
+        throw new Error("Empréstimo não encontrado");
+    }
+
+    if (emprestimo.status !== "ATIVO") {
+        throw new Error("Este empréstimo não está ativo");
+    }
+
+    if (
+        penalidade !== undefined &&
+        penalidade !== "MULTA" &&
+        penalidade !== "SUSPENSAO"
     ) {
-        const emprestimo =
-            await prismaClient.emprestimo.findUnique({
-                where: { id_emprestimo },
-                include: {
-                    multaRegistro: true
-                }
-            });
+        throw new Error("Penalidade inválida.");
+    }
 
-        if (!emprestimo) {
-            throw new Error("Empréstimo não encontrado");
-        }
+    const dataAtual = new Date();
 
-        if (emprestimo.status !== "ATIVO") {
-            throw new Error("Este empréstimo não está ativo");
-        }
+    const diasAtrasados = emprestimo.data_prevista
+        ? this.calcularDiasAtraso(
+            emprestimo.data_prevista,
+            dataAtual
+        )
+        : 0;
 
-        const data_devolucao = new Date();
+    const multaExistente = emprestimo.multaRegistro;
 
-        const diasAtrasados = emprestimo.data_prevista
-            ? this.calcularDiasAtraso(
-                emprestimo.data_prevista,
-                data_devolucao
-            )
-            : 0;
-
-        if (
-            penalidade !== undefined &&
-            penalidade !== "MULTA" &&
-            penalidade !== "SUSPENSAO"
-        ) {
-            throw new Error("Penalidade inválida.");
-        }
-
-        if (
-            diasAtrasados > 0 &&
-            penalidade !== "MULTA" &&
-            penalidade !== "SUSPENSAO"
-        ) {
+    // REGISTRAR MULTA SEM DEVOLVER O LIVRO
+    if (apenasMulta) {
+        if (penalidade !== "MULTA") {
             throw new Error(
-                "O empréstimo está atrasado. Escolha MULTA ou SUSPENSAO."
+                "A operação de aplicação de multa exige a penalidade MULTA."
             );
         }
 
-        let multa = 0;
-        let diasSuspensao = 0;
-
-        const multaExistente = emprestimo.multaRegistro;
-
-        if (
-            multaExistente?.status === "PAGA" &&
-            penalidade === "SUSPENSAO" &&
-            diasAtrasados > 0
-        ) {
+        if (diasAtrasados <= 0) {
             throw new Error(
-                "Este empréstimo já possui multa paga. Não é possível substituí-la por suspensão."
+                "Não é possível aplicar multa sem atraso."
             );
         }
 
-        if (diasAtrasados > 0 && penalidade === "MULTA") {
-            multa = multaExistente?.status === "PAGA"
-                ? Number(multaExistente.valor)
-                : diasAtrasados * 2;
-
-            if (multaExistente?.status !== "PAGA") {
-                await prismaClient.$transaction(async (tx) => {
-                    if (multaExistente) {
-                        await tx.multa.update({
-                            where: {
-                                id_multa: multaExistente.id_multa
-                            },
-                            data: {
-                                valor: multa,
-                                dias_atraso: diasAtrasados,
-                                data_calculo: new Date(),
-                                data_pagamento: null,
-                                status: "PENDENTE"
-                            }
-                        });
-                    } else {
-                        await tx.multa.create({
-                            data: {
-                                valor: multa,
-                                dias_atraso: diasAtrasados,
-                                status: "PENDENTE",
-                                id_emprestimo
-                            }
-                        });
-                    }
-                });
-            }
+        if (multaExistente?.status === "PAGA") {
+            throw new Error("Esta multa já foi paga.");
         }
 
-        if (diasAtrasados > 0 && penalidade === "SUSPENSAO") {
-            const horasAtraso = this.calcularHorasAtraso(
-                emprestimo.data_prevista!,
-                data_devolucao
+        if (multaExistente?.status === "CANCELADA") {
+            throw new Error(
+                "Esta multa está cancelada e não pode ser aplicada novamente automaticamente."
             );
+        }
 
-            if (horasAtraso < 1) {
-                throw new Error(
-                    "O atraso ainda não completou uma hora."
-                );
-            }
+        const valorMulta = diasAtrasados * 2;
 
-            diasSuspensao = horasAtraso;
+        const multa = await prismaClient.$transaction(
+            async (tx) => {
+                let registro;
 
-            if (diasSuspensao > 365) {
-                throw new Error(
-                    "A suspensão calculada ultrapassa 365 dias. Verifique a data de vencimento antes de prosseguir."
-                );
-            }
-
-            // Registra a suspensão e cancela eventual multa pendente
-            // dentro de uma única transação.
-            await prismaClient.$transaction(async (tx) => {
-                const leitor = await tx.leitor.findUnique({
-                    where: {
-                        id_leitores: emprestimo.id_leitores
-                    }
-                });
-
-                if (!leitor) {
-                    throw new Error("Leitor não encontrado");
-                }
-
-                const agora = new Date();
-
-                const inicioSuspensao =
-                    leitor.suspenso_ate &&
-                    leitor.suspenso_ate > agora
-                        ? new Date(leitor.suspenso_ate)
-                        : agora;
-
-                const suspenso_ate = new Date(inicioSuspensao);
-                suspenso_ate.setDate(
-                    suspenso_ate.getDate() + diasSuspensao
-                );
-
-                await tx.leitor.update({
-                    where: {
-                        id_leitores: emprestimo.id_leitores
-                    },
-                    data: { suspenso_ate }
-                });
-
-                if (
-                    multaExistente &&
-                    multaExistente.status === "PENDENTE"
-                ) {
-                    await tx.multa.update({
+                if (multaExistente) {
+                    registro = await tx.multa.update({
                         where: {
                             id_multa: multaExistente.id_multa
                         },
                         data: {
-                            status: "CANCELADA"
+                            valor: valorMulta,
+                            dias_atraso: diasAtrasados,
+                            data_calculo: new Date(),
+                            status: "PENDENTE",
+                            data_pagamento: null
+                        }
+                    });
+                } else {
+                    registro = await tx.multa.create({
+                        data: {
+                            valor: valorMulta,
+                            dias_atraso: diasAtrasados,
+                            status: "PENDENTE",
+                            id_emprestimo
                         }
                     });
                 }
 
                 await tx.emprestimo.update({
                     where: { id_emprestimo },
-                    data: {
-                        data_devolucao,
-                        status: "DEVOLVIDO",
-                        multa: 0
-                    }
+                    data: { multa: valorMulta }
                 });
 
-                await tx.livro.update({
-                    where: {
-                        id_livros: emprestimo.id_livros
-                    },
-                    data: {
-                        quantidade: {
-                            increment: 1
-                        }
-                    }
-                });
-            });
+                return registro;
+            }
+        );
 
-            return {
-                Dados: "Livro devolvido",
-                multa: 0,
-                dias_atrasados: diasAtrasados,
-                penalidade_aplicada: "SUSPENSAO",
-                dias_suspensao: diasSuspensao
-            };
+        // Não altera status do empréstimo, estoque ou suspensão.
+        return {
+            Dados: "Multa aplicada. O livro continua emprestado.",
+            multa: Number(multa.valor),
+            dias_atrasados: diasAtrasados,
+            penalidade_aplicada: "MULTA",
+            status_multa: multa.status,
+            livro_devolvido: false
+        };
+    }
+
+    if (
+        diasAtrasados > 0 &&
+        penalidade !== "MULTA" &&
+        penalidade !== "SUSPENSAO"
+    ) {
+        throw new Error(
+            "O empréstimo está atrasado. Escolha MULTA ou SUSPENSAO."
+        );
+    }
+
+    let diasSuspensao = 0;
+    let multa = Number(multaExistente?.valor ?? 0);
+
+    if (
+        diasAtrasados > 0 &&
+        penalidade === "SUSPENSAO"
+    ) {
+        const horasAtraso = this.calcularHorasAtraso(
+            emprestimo.data_prevista!,
+            dataAtual
+        );
+
+        if (horasAtraso < 1) {
+            throw new Error(
+                "O atraso ainda não completou uma hora."
+            );
+        }
+
+        diasSuspensao = horasAtraso;
+
+        if (diasSuspensao > 365) {
+            throw new Error(
+                "A suspensão calculada ultrapassa 365 dias. Verifique a data de vencimento antes de prosseguir."
+            );
         }
 
         await prismaClient.$transaction(async (tx) => {
+            const leitor = await tx.leitor.findUnique({
+                where: {
+                    id_leitores: emprestimo.id_leitores
+                }
+            });
+
+            if (!leitor) {
+                throw new Error("Leitor não encontrado");
+            }
+
+            const agora = new Date();
+
+            const inicioSuspensao =
+                leitor.suspenso_ate &&
+                leitor.suspenso_ate > agora
+                    ? new Date(leitor.suspenso_ate)
+                    : agora;
+
+            const suspenso_ate = new Date(inicioSuspensao);
+
+            suspenso_ate.setDate(
+                suspenso_ate.getDate() + diasSuspensao
+            );
+
+            await tx.leitor.update({
+                where: {
+                    id_leitores: emprestimo.id_leitores
+                },
+                data: { suspenso_ate }
+            });
+
+            // Preserva a multa existente.
+            // Suspensão não cancela nem apaga multa.
+
             await tx.emprestimo.update({
                 where: { id_emprestimo },
                 data: {
-                    data_devolucao,
+                    data_devolucao: dataAtual,
                     status: "DEVOLVIDO",
-                    multa
+                    multa: multaExistente?.status === "PENDENTE"
+                        ? Number(multaExistente.valor)
+                        : 0
                 }
             });
 
@@ -647,16 +591,133 @@ class emprestimosServices {
         });
 
         return {
-            Dados: "Livro devolvido",
+            Dados: "Livro devolvido e leitor suspenso.",
             multa,
             dias_atrasados: diasAtrasados,
-            penalidade_aplicada:
-                diasAtrasados > 0
-                    ? penalidade
-                    : "SEM_ATRASO",
+            penalidade_aplicada: "SUSPENSAO",
             dias_suspensao: diasSuspensao
         };
     }
+
+    // DEVOLUÇÃO NORMAL OU DEVOLUÇÃO COM MULTA
+    if (diasAtrasados > 0 && penalidade === "MULTA") {
+        if (multaExistente?.status === "CANCELADA") {
+            throw new Error(
+                "A multa está cancelada. Não é possível reativá-la automaticamente."
+            );
+        }
+
+        if (multaExistente?.status !== "PAGA") {
+            multa = diasAtrasados * 2;
+
+            await prismaClient.$transaction(async (tx) => {
+                if (multaExistente) {
+                    await tx.multa.update({
+                        where: {
+                            id_multa: multaExistente.id_multa
+                        },
+                        data: {
+                            valor: multa,
+                            dias_atraso: diasAtrasados,
+                            data_calculo: new Date(),
+                            status: "PENDENTE",
+                            data_pagamento: null
+                        }
+                    });
+                } else {
+                    await tx.multa.create({
+                        data: {
+                            valor: multa,
+                            dias_atraso: diasAtrasados,
+                            status: "PENDENTE",
+                            id_emprestimo
+                        }
+                    });
+                }
+
+                await tx.emprestimo.update({
+                    where: { id_emprestimo },
+                    data: {
+                        data_devolucao: dataAtual,
+                        status: "DEVOLVIDO",
+                        multa
+                    }
+                });
+
+                await tx.livro.update({
+                    where: {
+                        id_livros: emprestimo.id_livros
+                    },
+                    data: {
+                        quantidade: {
+                            increment: 1
+                        }
+                    }
+                });
+            });
+        } else {
+            await prismaClient.$transaction(async (tx) => {
+                await tx.emprestimo.update({
+                    where: { id_emprestimo },
+                    data: {
+                        data_devolucao: dataAtual,
+                        status: "DEVOLVIDO",
+                        multa: Number(multaExistente.valor)
+                    }
+                });
+
+                await tx.livro.update({
+                    where: {
+                        id_livros: emprestimo.id_livros
+                    },
+                    data: {
+                        quantidade: {
+                            increment: 1
+                        }
+                    }
+                });
+            });
+
+            multa = Number(multaExistente.valor);
+        }
+    } else {
+        await prismaClient.$transaction(async (tx) => {
+            await tx.emprestimo.update({
+                where: { id_emprestimo },
+                data: {
+                    data_devolucao: dataAtual,
+                    status: "DEVOLVIDO",
+                    multa: multaExistente?.status === "PENDENTE"
+                        ? Number(multaExistente.valor)
+                        : 0
+                }
+            });
+
+            await tx.livro.update({
+                where: {
+                    id_livros: emprestimo.id_livros
+                },
+                data: {
+                    quantidade: {
+                        increment: 1
+                    }
+                }
+            });
+        });
+    }
+
+    return {
+        Dados: "Livro devolvido",
+        multa,
+        dias_atrasados: diasAtrasados,
+        penalidade_aplicada:
+            diasAtrasados > 0
+                ? penalidade
+                : "SEM_ATRASO",
+        dias_suspensao: diasSuspensao
+    };
+}
+
 
     // =====================================================
     // CANCELAR EMPRÉSTIMO
@@ -835,42 +896,39 @@ class emprestimosServices {
     // =====================================================
     // MARCAR MULTA COMO PAGA
     // =====================================================
+async marcarMultaComoPaga(id_emprestimo: number) {
+    const emprestimo = await prismaClient.emprestimo.findUnique({
+        where: { id_emprestimo }
+    });
 
-    async marcarMultaComoPaga(id_emprestimo: number) {
-        const emprestimo =
-            await prismaClient.emprestimo.findUnique({
-                where: { id_emprestimo }
-            });
+    if (!emprestimo) {
+        throw new Error("Empréstimo não encontrado");
+    }
 
-        if (!emprestimo) {
-            throw new Error("Empréstimo não encontrado");
-        }
+    if (emprestimo.status === "CANCELADO") {
+        throw new Error(
+            "Não é possível pagar multa de um empréstimo cancelado."
+        );
+    }
 
-        if (emprestimo.status === "CANCELADO") {
-            throw new Error(
-                "Não é possível pagar multa de um empréstimo cancelado."
-            );
-        }
+    const multa = await prismaClient.multa.findUnique({
+        where: { id_emprestimo }
+    });
 
-        const multa = await prismaClient.multa.findUnique({
-            where: { id_emprestimo }
-        });
+    if (!multa || Number(multa.valor) <= 0) {
+        throw new Error("Este empréstimo não possui multa.");
+    }
 
-        if (!multa || Number(multa.valor) <= 0) {
-            throw new Error(
-                "Este empréstimo não possui multa."
-            );
-        }
+    if (multa.status === "PAGA") {
+        throw new Error("Esta multa já foi paga.");
+    }
 
-        if (multa.status === "PAGA") {
-            throw new Error("Esta multa já foi paga.");
-        }
+    if (multa.status === "CANCELADA") {
+        throw new Error("Esta multa está cancelada.");
+    }
 
-        if (multa.status === "CANCELADA") {
-            throw new Error("Esta multa está cancelada.");
-        }
-
-        const atualizado = await prismaClient.multa.update({
+    const atualizado = await prismaClient.$transaction(async (tx) => {
+        const multaPaga = await tx.multa.update({
             where: {
                 id_multa: multa.id_multa
             },
@@ -880,15 +938,78 @@ class emprestimosServices {
             }
         });
 
-        return {
-            mensagem: "Multa marcada como paga.",
-            id_multa: atualizado.id_multa,
-            id_emprestimo: atualizado.id_emprestimo,
-            multa: Number(atualizado.valor),
-            status_multa: atualizado.status,
-            data_pagamento: atualizado.data_pagamento
-        };
+        // Se o livro ainda estiver emprestado, devolve automaticamente.
+        if (emprestimo.status === "ATIVO") {
+            await tx.emprestimo.update({
+                where: { id_emprestimo },
+                data: {
+                    status: "DEVOLVIDO",
+                    data_devolucao: new Date(),
+                    multa: Number(multa.valor)
+                }
+            });
+
+            await tx.livro.update({
+                where: {
+                    id_livros: emprestimo.id_livros
+                },
+                data: {
+                    quantidade: {
+                        increment: 1
+                    }
+                }
+            });
+        }
+
+        // Se já foi devolvido com suspensão, não devolve novamente.
+        return multaPaga;
+    });
+
+    return {
+        mensagem: emprestimo.status === "ATIVO"
+            ? "Multa paga e livro devolvido automaticamente."
+            : "Multa paga com sucesso.",
+        id_multa: atualizado.id_multa,
+        id_emprestimo: atualizado.id_emprestimo,
+        multa: Number(atualizado.valor),
+        status_multa: atualizado.status,
+        data_pagamento: atualizado.data_pagamento,
+        livro_devolvido: emprestimo.status === "ATIVO"
+    };
+}
+
+async excluirEmprestimo(id_emprestimo: number) {
+    const emprestimo = await prismaClient.emprestimo.findUnique({
+        where: { id_emprestimo }
+    });
+
+    if (!emprestimo) {
+        throw new Error("Empréstimo não encontrado.");
     }
+
+    if (emprestimo.status === "ATIVO") {
+        throw new Error(
+            "Não é possível excluir um empréstimo ativo. Devolva ou cancele o empréstimo primeiro."
+        );
+    }
+
+    await prismaClient.$transaction(async (tx) => {
+        // Remove a multa vinculada, se existir.
+        await tx.multa.deleteMany({
+            where: { id_emprestimo }
+        });
+
+        // Remove o empréstimo do banco.
+        await tx.emprestimo.delete({
+            where: { id_emprestimo }
+        });
+    });
+
+    return {
+        mensagem: "Empréstimo excluído permanentemente.",
+        id_emprestimo
+    };
+}
 }
 
 export { emprestimosServices };

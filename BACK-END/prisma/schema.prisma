@@ -48,6 +48,9 @@ model Usuario {
 
   leitores    Leitor[]
   emprestimos Emprestimo[]
+    conversasParticipanteA Conversa[] @relation("ParticipanteA")
+  conversasParticipanteB Conversa[] @relation("ParticipanteB")
+  mensagensEnviadas     Mensagem[] @relation("RemetenteMensagem")
 
   @@map("usuarios")
 }
@@ -104,4 +107,41 @@ model Multa {
   emprestimo Emprestimo @relation(fields: [id_emprestimo], references: [id_emprestimo])
 
   @@map("multas")
+  
+}
+
+model Conversa {
+  id_conversa Int @id @default(autoincrement())
+  participanteAId Int
+  participanteBId Int
+  criada_em DateTime @default(now())
+
+  participanteA Usuario @relation("ParticipanteA", fields: [participanteAId], references: [id_usuarios])
+
+  participanteB Usuario @relation( "ParticipanteB", fields: [participanteBId], references: [id_usuarios])
+
+  mensagens Mensagem[]
+
+  @@unique([participanteAId, participanteBId])
+  @@map("conversas")
+}
+
+model Mensagem {
+  id_mensagem Int @id @default(autoincrement())
+  conteudo String @db.VarChar(2000)
+  enviada_em DateTime @default(now()) @db.DateTime(3)
+  lida_em DateTime? @db.DateTime(3)
+
+  id_conversa Int
+  id_remetente Int
+  
+  conversa Conversa @relation(fields: [id_conversa], references: [id_conversa], onDelete: Cascade)
+  
+  remetente Usuario @relation("RemetenteMensagem", fields: [id_remetente], references: [id_usuarios])
+
+  @@index([id_conversa, enviada_em])
+  @@index([id_remetente, lida_em])
+  @@map("mensagens")
+  
+  
 }

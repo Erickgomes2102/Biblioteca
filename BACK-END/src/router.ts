@@ -22,9 +22,9 @@ import { avatarController } from "./Controllers/perfilsControllers";
 
 import { adminMiddleware } from "./Middleware/adminMiddleware";
 
-
+import { mensagensController } from "./Controllers/mensagensControllers";
 const router = Router();
-
+const mensagens = new mensagensController();
 
 // =====================
 // LOGIN
@@ -76,7 +76,7 @@ router.get(
 );
 
 router.put(
-    "/EditarLivro/:id_livros", 
+    "/EditarLivro/:id_livros",
     authMiddleware,
     livros.editarLivro
 );
@@ -249,12 +249,51 @@ router.get("/Administracao/Usuarios/:id_usuarios", authMiddleware, adminMiddlewa
 
 router.put("/Administracao/Usuarios/Editar/:id_usuarios", authMiddleware, adminMiddleware, new usuariosController().editarUsuario)
 
+router.put("/EditarUsuario/:id", authMiddleware, new usuariosController().editarMeuPerfil )
 router.patch("/Administracao/Usuarios/Privilegio/:id_usuarios/", authMiddleware, adminMiddleware, new usuariosController().alterarPrivilegio)
 
 router.delete("/Administracao/Usuarios/Deletar/:id_usuarios", authMiddleware, adminMiddleware, new usuariosController().excluirUsuario)
 
 router.patch(
-    "/CancelarSuspensao/:id_leitores", authMiddleware, new leitoresController().cancelarSuspensao 
+    "/CancelarSuspensao/:id_leitores", authMiddleware, new leitoresController().cancelarSuspensao
 );
 
+router.delete("/ExcluirEmprestimo/:id_emprestimo", authMiddleware, new emprestimosController().excluirEmprestimo)
+
+
+router.get(
+    "/Mensagens/Contatos",
+    authMiddleware,
+    mensagens.listarContatos
+);
+
+router.get(
+    "/Mensagens/Conversas",
+    authMiddleware,
+    mensagens.listarConversas
+);
+
+router.post(
+    "/Mensagens/Conversas",
+    authMiddleware,
+    mensagens.obterOuCriarConversa
+);
+
+router.get(
+    "/Mensagens/Conversas/:id_conversa",
+    authMiddleware,
+    mensagens.listarMensagens
+);
+
+router.post(
+    "/Mensagens/Conversas/:id_conversa",
+    authMiddleware,
+    mensagens.enviarMensagem
+);
+
+router.patch(
+    "/Mensagens/Conversas/:id_conversa/Lidas",
+    authMiddleware,
+    mensagens.marcarComoLidas
+);
 export default router;
