@@ -252,6 +252,7 @@ export default function App() {
               livros={livros}
               setLivros={setLivros}
               categorias={categorias}
+              usuarioLogado={usuarioLogado}
             />
 
           )}
@@ -265,6 +266,7 @@ export default function App() {
               leitores={leitores}
               setLeitores={setLeitores}
               usuarios={usuarios}
+              usuarioLogado={usuarioLogado}
             />
 
           )}

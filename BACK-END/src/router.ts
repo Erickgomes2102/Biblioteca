@@ -76,14 +76,14 @@ router.get(
 );
 
 router.put(
-    "/EditarLivro/:id_livros",
+    "/EditarLivro/:id_livros", 
     authMiddleware,
     livros.editarLivro
 );
 
 router.delete(
     "/ExcluirLivro/:id_livros",
-    authMiddleware,
+    authMiddleware, adminMiddleware,
     livros.excluirLivro
 );
 
@@ -114,13 +114,13 @@ router.get(
 
 router.put(
     "/EditarLeitores/:id_leitores",
-    authMiddleware,
+    authMiddleware, adminMiddleware,
     leitores.editarLeitor
 );
 
 router.delete(
     "/RemoverLeitor/:id_leitores",
-    authMiddleware,
+    authMiddleware, adminMiddleware,
     leitores.excluirLeitor
 );
 
@@ -252,5 +252,9 @@ router.put("/Administracao/Usuarios/Editar/:id_usuarios", authMiddleware, adminM
 router.patch("/Administracao/Usuarios/Privilegio/:id_usuarios/", authMiddleware, adminMiddleware, new usuariosController().alterarPrivilegio)
 
 router.delete("/Administracao/Usuarios/Deletar/:id_usuarios", authMiddleware, adminMiddleware, new usuariosController().excluirUsuario)
+
+router.patch(
+    "/CancelarSuspensao/:id_leitores", authMiddleware, new leitoresController().cancelarSuspensao 
+);
 
 export default router;

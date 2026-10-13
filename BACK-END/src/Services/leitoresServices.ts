@@ -1,23 +1,22 @@
 import prismaClient from "../Prisma/PrismaClient";
 
 interface cadastrarLeitor {
-    nome: string,
-    cpf: string,
-    telefone: string,
-    email: string,
-    id_usuarios: number
+    nome: string;
+    cpf: string;
+    telefone: string;
+    email: string;
+    id_usuarios: number;
 }
 
 interface editarLeitores {
-    nome?: string,
-    cpf?: string,
-    telefone?: string,
-    email?: string,
-    id_usuarios?: number
+    nome?: string;
+    cpf?: string;
+    telefone?: string;
+    email?: string;
+    id_usuarios?: number;
 }
 
 class leitoresServices {
-
     async criarLeitor({
         nome,
         cpf,
@@ -25,11 +24,8 @@ class leitoresServices {
         email,
         id_usuarios
     }: cadastrarLeitor) {
-
         const cpfExistente = await prismaClient.leitor.findUnique({
-            where: {
-                cpf
-            }
+            where: { cpf }
         });
 
         if (cpfExistente) {
@@ -37,9 +33,7 @@ class leitoresServices {
         }
 
         const emailExistente = await prismaClient.leitor.findUnique({
-            where: {
-                email
-            }
+            where: { email }
         });
 
         if (emailExistente) {
@@ -47,47 +41,34 @@ class leitoresServices {
         }
 
         const usuario = await prismaClient.usuario.findUnique({
-            where: {
-                id_usuarios
-            }
+            where: { id_usuarios }
         });
 
         if (!usuario) {
             throw new Error("Usuário responsável não encontrado");
         }
 
-        const leitor = await prismaClient.leitor.create({
+        return await prismaClient.leitor.create({
             data: {
                 nome,
                 cpf,
                 telefone,
                 email,
-                id_usuarios
+                id_usuarios,
+                suspenso_ate: null
             }
         });
-
-        return ({Dados: "Dados Salvos"});
     }
-
 
     async listarLeitores() {
-
-        const leitores = await prismaClient.leitor.findMany({
-            orderBy: {
-                nome: "asc"
-            }
+        return await prismaClient.leitor.findMany({
+            orderBy: { nome: "asc" }
         });
-
-        return leitores;
     }
-
 
     async buscarLeitorPorId(id_leitores: number) {
-
         const leitor = await prismaClient.leitor.findUnique({
-            where: {
-                id_leitores
-            }
+            where: { id_leitores }
         });
 
         if (!leitor) {
@@ -96,14 +77,10 @@ class leitoresServices {
 
         return leitor;
     }
-
 
     async buscarLeitorPorCPF(cpf: string) {
-
         const leitor = await prismaClient.leitor.findUnique({
-            where: {
-                cpf
-            }
+            where: { cpf }
         });
 
         if (!leitor) {
@@ -112,17 +89,13 @@ class leitoresServices {
 
         return leitor;
     }
-
 
     async editarLeitor(
         id_leitores: number,
         dados: editarLeitores
     ) {
-
         const leitor = await prismaClient.leitor.findUnique({
-            where: {
-                id_leitores
-            }
+            where: { id_leitores }
         });
 
         if (!leitor) {
@@ -130,13 +103,10 @@ class leitoresServices {
         }
 
         if (dados.cpf !== undefined) {
-
             const cpfExistente = await prismaClient.leitor.findFirst({
                 where: {
                     cpf: dados.cpf,
-                    NOT: {
-                        id_leitores
-                    }
+                    NOT: { id_leitores }
                 }
             });
 
@@ -146,13 +116,10 @@ class leitoresServices {
         }
 
         if (dados.email !== undefined) {
-
             const emailExistente = await prismaClient.leitor.findFirst({
                 where: {
                     email: dados.email,
-                    NOT: {
-                        id_leitores
-                    }
+                    NOT: { id_leitores }
                 }
             });
 
@@ -162,11 +129,8 @@ class leitoresServices {
         }
 
         if (dados.id_usuarios !== undefined) {
-
             const usuario = await prismaClient.usuario.findUnique({
-                where: {
-                    id_usuarios: dados.id_usuarios
-                }
+                where: { id_usuarios: dados.id_usuarios }
             });
 
             if (!usuario) {
@@ -174,23 +138,39 @@ class leitoresServices {
             }
         }
 
-        await prismaClient.leitor.update({
-            where: {
-                id_leitores
-            },
-            data: dados
-        });
+        // Edição de dados pessoais não pode alterar a suspensão.
+        const { ...dadosPermitidos } = dados;
 
-        return ({Dados: "Dados Salvos"});
+        return await prismaClient.leitor.update({
+            where: { id_leitores },
+            data: dadosPermitidos
+        });
     }
 
+    async cancelarSuspensao(id_leitores: number) {
+        const leitor = await prismaClient.leitor.findUnique({
+            where: { id_leitores }
+        });
+
+        if (!leitor) {
+            throw new Error("Leitor não encontrado");
+        }
+
+        if (!leitor.suspenso_ate) {
+            throw new Error("Este leitor não possui suspensão registrada");
+        }
+
+        return await prismaClient.leitor.update({
+            where: { id_leitores },
+            data: {
+                suspenso_ate: null
+            }
+        });
+    }
 
     async excluirLeitor(id_leitores: number) {
-
         const leitor = await prismaClient.leitor.findUnique({
-            where: {
-                id_leitores
-            }
+            where: { id_leitores }
         });
 
         if (!leitor) {
@@ -198,14 +178,10 @@ class leitoresServices {
         }
 
         await prismaClient.leitor.delete({
-            where: {
-                id_leitores
-            }
+            where: { id_leitores }
         });
 
-        return {
-            Dados: "Leitor excluído"
-        };
+        return { Dados: "Leitor excluído" };
     }
 }
 

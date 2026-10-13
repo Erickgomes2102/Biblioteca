@@ -133,17 +133,20 @@ class emprestimosController {
         req: Request,
         res: Response
     ) {
+        
 
         const {
             id_emprestimo
         } = req.params;
+        
+        const { penalidade } = req.body;
 
         const service =
             new emprestimosServices();
 
         const resposta =
             await service.devolverLivro(
-                Number(id_emprestimo)
+                Number(id_emprestimo), penalidade
             );
 
         return res.json(resposta);

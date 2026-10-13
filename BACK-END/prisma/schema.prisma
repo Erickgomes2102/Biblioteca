@@ -58,7 +58,8 @@ model Leitor {
   cpf         String @unique @db.VarChar(11)
   telefone    String @db.VarChar(20)
   email       String @unique @db.VarChar(150)
-
+  suspenso_ate DateTime? @db.DateTime(3)
+  
   id_usuarios Int
 
   usuario Usuario @relation(fields: [id_usuarios], references: [id_usuarios])

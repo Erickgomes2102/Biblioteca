@@ -14,11 +14,17 @@ import ModalLivro from "./ModalLivro";
 export default function Livros({
   livros,
   setLivros,
-  categorias
+  categorias,
+  usuarios,
+  usuarioLogado
 }) {
   const [busca, setBusca] = useState("");
   const [novo, setNovo] = useState(null);
   const [editando, setEditando] = useState(null);
+ 
+  const ehAdministrador = usuarioLogado?.tipo === "ADMINISTRADOR";
+
+
 
   const filtrados = livros.filter((livro) =>
     (
@@ -279,7 +285,7 @@ export default function Livros({
                     disponíveis
                   </div>
                 </div>
-
+               
                 <button
                   type="button"
                   onClick={() => setEditando(livro)}
@@ -291,6 +297,8 @@ export default function Livros({
                     color={cores.tintaSuave}
                   />
                 </button>
+               {ehAdministrador && ( 
+                <>
 
                 <button
                   type="button"
@@ -305,6 +313,9 @@ export default function Livros({
                     color={cores.carimbo}
                   />
                 </button>
+               
+               </>
+              )}
               </div>
             }
           />
