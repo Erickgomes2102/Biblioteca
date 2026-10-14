@@ -34,6 +34,26 @@ export default function Administracao({
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
 
+  const obterUrlAvatar = (avatar) => {
+    if (!avatar || typeof avatar !== "string") {
+      return null;
+    }
+
+    if (
+      avatar.startsWith("http://") ||
+      avatar.startsWith("https://") ||
+      avatar.startsWith("data:image/") 
+    ) {
+      return avatar;
+    }
+
+    if (avatar.startsWith("/")) {
+      return `${api.defaults.baseURL?.replace(/\$/, "")}${avatar}`;
+
+    }
+
+    return null;
+  }
 
   // =====================================================
   // VERIFICAR ADMINISTRADOR
@@ -570,25 +590,40 @@ export default function Administracao({
                       }}
                     >
 
-                      <div
-                        style={{
-                          width: 34,
-                          height: 34,
-                          borderRadius: "50%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          border:
-                            `1px solid ${cores.linha}`
-                        }}
-                      >
-
-                        <User
-                          size={16}
-                          color={cores.carimbo}
-                        />
-
-                      </div>
+                     <div
+  style={{
+    width: 34,
+    height: 34,
+    minWidth: 34,
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: `1px solid ${cores.linha}`,
+    overflow: "hidden",
+    background: cores.papel
+  }}
+>
+  {obterUrlAvatar(usuario.avatar) ? (
+    <img
+      src={obterUrlAvatar(usuario.avatar)}
+      alt={`Foto de ${usuario.nome}`}
+      onError={(e) => {
+        e.currentTarget.style.display = "none";
+      }}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover"
+      }}
+    />
+  ) : (
+    <User
+      size={16}
+      color={cores.carimbo}
+    />
+  )}
+</div>
 
 
                       <div>

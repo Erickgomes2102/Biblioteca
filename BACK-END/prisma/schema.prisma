@@ -45,6 +45,8 @@ model Usuario {
   senha       String  @db.VarChar(255)
   tipo        String  @db.VarChar(255)
   avatar      String? @db.VarChar(500)
+  ativo       Boolean @default(true)
+
 
   leitores    Leitor[]
   emprestimos Emprestimo[]
@@ -78,16 +80,17 @@ model Emprestimo {
   data_prevista   DateTime? @db.Date
   data_devolucao  DateTime  @db.Date
   status          String    @db.VarChar(100)
+  responsavel_nome String? @db.VarChar(100)
 
   multa Decimal @default(0) @db.Decimal(10, 2)
 
   id_leitores Int
   id_livros   Int
-  id_usuarios Int
+  id_usuarios Int?
 
   leitor  Leitor  @relation(fields: [id_leitores], references: [id_leitores])
   livro   Livro   @relation(fields: [id_livros], references: [id_livros])
-  usuario Usuario @relation(fields: [id_usuarios], references: [id_usuarios])
+  usuario Usuario? @relation(fields: [id_usuarios], references: [id_usuarios], onDelete: SetNull)
 
   multaRegistro Multa?
 

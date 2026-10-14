@@ -14,6 +14,7 @@ interface editarUsuarios {
     email?: string,
     senha?: string,
     tipo?: string
+    avatar?: string | null;
 }
 
 class usuariosServices {
@@ -244,20 +245,19 @@ class usuariosServices {
             );
         }
 
+        if (!usuario.ativo) {
+            throw new Error("Este usuário já está desativado")
+        }
 
-        // =================================================
-        // EXCLUIR SOMENTE O USUÁRIO
-        // =================================================
-
-        await prismaClient.usuario.delete({
-            where: {
-                id_usuarios
-            }
+        await prismaClient.usuario.update({
+            where: { id_usuarios },
+            data: { ativo: false }
         });
 
         return {
-            Dados: "Usuário excluído"
-        };
+            Dados: "Acesso do Usuário desativado."
+        }
+
     }
 
 

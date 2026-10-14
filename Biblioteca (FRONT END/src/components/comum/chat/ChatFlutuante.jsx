@@ -1,5 +1,11 @@
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+    useState
+} from "react";
+
 import {
     MessageCircle,
     Minus,
@@ -12,6 +18,7 @@ import {
 } from "lucide-react";
 
 import api from "../../../services/api";
+
 import {
     conectarChat,
     desconectarChat
@@ -19,13 +26,74 @@ import {
 
 import "./chat.css";
 
+// =====================================================
+// AVATAR
+// =====================================================
+
+function obterUrlAvatar(avatar) {
+    if (!avatar || typeof avatar !== "string") {
+        return null;
+    }
+
+    const valor = avatar.trim();
+
+    if (
+        valor.startsWith("https://") ||
+        valor.startsWith("http://") ||
+        valor.startsWith("data:image/")
+    ) {
+        return valor;
+    }
+
+    if (valor.startsWith("/")) {
+        const baseURL = api.defaults.baseURL?.replace(/\/$/, "") || "";
+        return `${baseURL}${valor}`;
+    }
+
+    return null;
+}
+
+function AvatarChat({
+    nome,
+    avatar,
+    className = "chat-avatar"
+}) {
+    const [imagemErro, setImagemErro] = useState(false);
+
+    const url = obterUrlAvatar(avatar);
+
+    useEffect(() => {
+        setImagemErro(false);
+    }, [avatar]);
+
+    return (
+        <div className={className}>
+            {url && !imagemErro ? (
+                <img
+                    src={url}
+                    alt={`Foto de ${nome || "usuário"}`}
+                    onError={() => setImagemErro(true)}
+                />
+            ) : (
+                (nome || "?").charAt(0).toUpperCase()
+            )}
+        </div>
+    );
+}
+
+// =====================================================
+// CHAT FLUTUANTE
+// =====================================================
+
 export default function ChatFlutuante({ usuarioLogado }) {
     const [aberto, setAberto] = useState(false);
     const [minimizado, setMinimizado] = useState(true);
+
     const [contatos, setContatos] = useState([]);
     const [conversas, setConversas] = useState([]);
     const [conversaAtual, setConversaAtual] = useState(null);
     const [mensagens, setMensagens] = useState([]);
+
     const [texto, setTexto] = useState("");
     const [busca, setBusca] = useState("");
     const [carregando, setCarregando] = useState(false);
@@ -37,19 +105,34 @@ export default function ChatFlutuante({ usuarioLogado }) {
         usuarioLogado?.id ?? usuarioLogado?.id_usuarios
     );
 
-    const totalNaoLidas = conversas.reduce(
-        (total, conversa) => total + (conversa.naoLidas || 0),
-        0
-    );
+    // =====================================================
+    // NORMALIZAR RESPOSTAS DA API
+    // =====================================================
 
     const carregarContatos = useCallback(async () => {
         const resposta = await api.get("/Mensagens/Contatos");
-        setContatos(resposta.data);
+
+        const dados = Array.isArray(resposta.data)
+            ? resposta.data.filter(
+                (contato) => contato && typeof contato === "object"
+            )
+            : [];
+
+        setContatos(dados);
     }, []);
 
     const carregarConversas = useCallback(async () => {
         const resposta = await api.get("/Mensagens/Conversas");
-        setConversas(resposta.data);
+
+        const dados = Array.isArray(resposta.data)
+            ? resposta.data.filter(
+                (conversa) => conversa && typeof conversa === "object"
+            )
+            : [];
+
+        setConversas(dados);
+
+        return dados;
     }, []);
 
     const carregarMensagens = useCallback(async (idConversa) => {
@@ -57,8 +140,20 @@ export default function ChatFlutuante({ usuarioLogado }) {
             `/Mensagens/Conversas/${idConversa}`
         );
 
-        setMensagens(resposta.data);
+        const dados = Array.isArray(resposta.data)
+            ? resposta.data.filter(
+                (mensagem) => mensagem && typeof mensagem === "object"
+            )
+            : [];
+
+        setMensagens(dados);
+
+        return dados;
     }, []);
+
+    // =====================================================
+    // MARCAR MENSAGENS COMO LIDAS
+    // =====================================================
 
     const marcarLidas = useCallback(async (idConversa) => {
         await api.patch(
@@ -66,20 +161,32 @@ export default function ChatFlutuante({ usuarioLogado }) {
         );
 
         setConversas((atuais) =>
-            atuais.map((conversa) =>
-                conversa.id_conversa === idConversa
-                    ? { ...conversa, naoLidas: 0 }
-                    : conversa
-            )
+            atuais
+                .filter(Boolean)
+                .map((conversa) =>
+                    conversa.id_conversa === idConversa
+                        ? { ...conversa, naoLidas: 0 }
+                        : conversa
+                )
         );
     }, []);
 
+    // =====================================================
+    // ABRIR CONVERSA
+    // =====================================================
+
     const abrirConversa = useCallback(async (conversa) => {
+        if (!conversa || !conversa.id_conversa) {
+            setErro("Não foi possível identificar esta conversa.");
+            return;
+        }
+
         setErro("");
         setCarregando(true);
 
         try {
             setConversaAtual(conversa);
+            setMensagens([]);
 
             await carregarMensagens(conversa.id_conversa);
             await marcarLidas(conversa.id_conversa);
@@ -93,46 +200,85 @@ export default function ChatFlutuante({ usuarioLogado }) {
         } finally {
             setCarregando(false);
         }
-    }, [carregarMensagens, marcarLidas, carregarConversas]);
+    }, [
+        carregarMensagens,
+        marcarLidas,
+        carregarConversas
+    ]);
+
+    // =====================================================
+    // INICIAR CONVERSA
+    // =====================================================
 
     const iniciarConversa = useCallback(async (contato) => {
+        if (!contato?.id_usuarios) {
+            setErro("Não foi possível identificar este contato.");
+            return;
+        }
+
         setErro("");
         setCarregando(true);
 
         try {
             const resposta = await api.post(
                 "/Mensagens/Conversas",
-                { id_contato: contato.id_usuarios }
+                {
+                    id_contato: contato.id_usuarios
+                }
             );
 
+            const conversaCriada = resposta.data;
+
+            if (!conversaCriada?.id_conversa) {
+                throw new Error(
+                    "A API não retornou o identificador da conversa."
+                );
+            }
+
             const conversa = {
-                ...resposta.data,
+                ...conversaCriada,
                 contato,
                 naoLidas: 0,
                 ultimaMensagem: null
             };
 
             await carregarConversas();
+
             setConversaAtual(conversa);
+            setMensagens([]);
+
             await carregarMensagens(conversa.id_conversa);
             await marcarLidas(conversa.id_conversa);
         } catch (error) {
             setErro(
                 error.response?.data?.erro ||
                 error.response?.data?.error ||
+                error.message ||
                 "Não foi possível iniciar a conversa."
             );
         } finally {
             setCarregando(false);
         }
-    }, [carregarConversas, carregarMensagens, marcarLidas]);
+    }, [
+        carregarConversas,
+        carregarMensagens,
+        marcarLidas
+    ]);
+
+    // =====================================================
+    // ENVIAR MENSAGEM
+    // =====================================================
 
     const enviarMensagem = async (event) => {
         event.preventDefault();
 
         const conteudo = texto.trim();
 
-        if (!conteudo || !conversaAtual || carregando) {
+        if (
+            !conteudo ||
+            !conversaAtual?.id_conversa ||
+            carregando
+        ) {
             return;
         }
 
@@ -145,28 +291,43 @@ export default function ChatFlutuante({ usuarioLogado }) {
                 { conteudo }
             );
 
+            const mensagem = resposta.data;
+
+            if (!mensagem || typeof mensagem !== "object") {
+                throw new Error(
+                    "A API não retornou a mensagem enviada."
+                );
+            }
+
             setMensagens((atuais) => {
-                const existe = atuais.some(
-                    (mensagem) =>
-                        mensagem.id_mensagem ===
-                        resposta.data.id_mensagem
+                const lista = atuais.filter(Boolean);
+
+                const existe = lista.some(
+                    (item) =>
+                        item.id_mensagem === mensagem.id_mensagem
                 );
 
-                return existe ? atuais : [...atuais, resposta.data];
+                return existe ? lista : [...lista, mensagem];
             });
 
             setTexto("");
+
             await carregarConversas();
         } catch (error) {
             setErro(
                 error.response?.data?.erro ||
                 error.response?.data?.error ||
+                error.message ||
                 "Não foi possível enviar a mensagem."
             );
         } finally {
             setCarregando(false);
         }
     };
+
+    // =====================================================
+    // CONECTAR CHAT E RECEBER EVENTOS
+    // =====================================================
 
     useEffect(() => {
         if (!usuarioLogado || !idUsuario) {
@@ -204,42 +365,59 @@ export default function ChatFlutuante({ usuarioLogado }) {
         }
 
         const receberMensagem = async (mensagem) => {
-            if (!ativo) return;
+            if (!ativo || !mensagem) {
+                return;
+            }
 
-            await carregarConversas();
+            try {
+                await carregarConversas();
 
-            if (
-                conversaAtual?.id_conversa === mensagem.id_conversa
-            ) {
-                setMensagens((atuais) => {
-                    const existe = atuais.some(
-                        (item) =>
-                            item.id_mensagem === mensagem.id_mensagem
-                    );
+                if (
+                    conversaAtual?.id_conversa ===
+                    mensagem.id_conversa
+                ) {
+                    setMensagens((atuais) => {
+                        const lista = atuais.filter(Boolean);
 
-                    return existe ? atuais : [...atuais, mensagem];
-                });
+                        const existe = lista.some(
+                            (item) =>
+                                item.id_mensagem === mensagem.id_mensagem
+                        );
 
-                if (mensagem.id_remetente !== idUsuario) {
-                    try {
-                        await marcarLidas(mensagem.id_conversa);
-                    } catch {
-                        // A mensagem permanece salva no servidor.
+                        return existe ? lista : [...lista, mensagem];
+                    });
+
+                    if (
+                        Number(mensagem.id_remetente) !== idUsuario
+                    ) {
+                        try {
+                            await marcarLidas(mensagem.id_conversa);
+                        } catch {
+                            // A mensagem continua salva no servidor.
+                        }
                     }
                 }
+            } catch {
+                // Evita que uma falha de atualização derrube o chat.
             }
         };
 
         const receberLeitura = async (evento) => {
-            if (!ativo) return;
-
-            if (
-                conversaAtual?.id_conversa === evento.id_conversa
-            ) {
-                await carregarMensagens(evento.id_conversa);
+            if (!ativo || !evento) {
+                return;
             }
 
-            await carregarConversas();
+            try {
+                if (
+                    conversaAtual?.id_conversa === evento.id_conversa
+                ) {
+                    await carregarMensagens(evento.id_conversa);
+                }
+
+                await carregarConversas();
+            } catch {
+                // A atualização poderá ocorrer na próxima consulta.
+            }
         };
 
         socket.on("mensagem:nova", receberMensagem);
@@ -247,6 +425,7 @@ export default function ChatFlutuante({ usuarioLogado }) {
 
         return () => {
             ativo = false;
+
             socket.off("mensagem:nova", receberMensagem);
             socket.off("mensagem:lida", receberLeitura);
         };
@@ -260,6 +439,10 @@ export default function ChatFlutuante({ usuarioLogado }) {
         carregarMensagens
     ]);
 
+    // =====================================================
+    // ROLAR PARA A ÚLTIMA MENSAGEM
+    // =====================================================
+
     useEffect(() => {
         if (listaRef.current) {
             listaRef.current.scrollTop =
@@ -267,15 +450,41 @@ export default function ChatFlutuante({ usuarioLogado }) {
         }
     }, [mensagens, aberto, minimizado]);
 
+    // =====================================================
+    // FILTROS
+    // =====================================================
+
     if (!usuarioLogado) {
         return null;
     }
 
-    const contatosFiltrados = contatos.filter((contato) =>
-        contato.nome.toLowerCase().includes(busca.toLowerCase())
+    const contatosValidos = contatos.filter(
+        (contato) => contato && typeof contato === "object"
     );
 
-    const totalMensagensNaoLidas = Number(totalNaoLidas) || 0;
+    const conversasValidas = conversas.filter(
+        (conversa) => conversa && typeof conversa === "object"
+    );
+
+    const mensagensValidas = mensagens.filter(
+        (mensagem) => mensagem && typeof mensagem === "object"
+    );
+
+    const contatosFiltrados = contatosValidos.filter((contato) =>
+        String(contato.nome || "")
+            .toLowerCase()
+            .includes(busca.toLowerCase().trim())
+    );
+
+    const totalMensagensNaoLidas = conversasValidas.reduce(
+        (total, conversa) =>
+            total + (Number(conversa.naoLidas) || 0),
+        0
+    );
+
+    // =====================================================
+    // INTERFACE
+    // =====================================================
 
     return (
         <div className="chat-container">
@@ -303,7 +512,11 @@ export default function ChatFlutuante({ usuarioLogado }) {
             )}
 
             {aberto && (
-                <section className={`chat-janela ${minimizado ? "chat-minimizado" : ""}`}>
+                <section
+                    className={`chat-janela ${
+                        minimizado ? "chat-minimizado" : ""
+                    }`}
+                >
                     <header className="chat-cabecalho">
                         <div className="chat-titulo">
                             {conversaAtual ? (
@@ -311,24 +524,28 @@ export default function ChatFlutuante({ usuarioLogado }) {
                                     <button
                                         type="button"
                                         className="chat-icone"
-                                        onClick={() => setConversaAtual(null)}
+                                        onClick={() => {
+                                            setConversaAtual(null);
+                                            setMensagens([]);
+                                            setErro("");
+                                        }}
                                         title="Voltar às conversas"
                                         aria-label="Voltar"
                                     >
                                         <ArrowLeft size={17} />
                                     </button>
 
-                                    <div className="chat-avatar">
-                                        {(conversaAtual.contato?.nome || "?")
-                                            .charAt(0)
-                                            .toUpperCase()}
-                                    </div>
+                                    <AvatarChat
+                                        nome={conversaAtual.contato?.nome}
+                                        avatar={conversaAtual.contato?.avatar}
+                                    />
 
                                     <div className="chat-titulo-texto">
                                         <strong>
                                             {conversaAtual.contato?.nome ||
                                                 "Conversa"}
                                         </strong>
+
                                         <small>
                                             {conversaAtual.contato?.tipo || ""}
                                         </small>
@@ -337,8 +554,10 @@ export default function ChatFlutuante({ usuarioLogado }) {
                             ) : (
                                 <>
                                     <MessageSquare size={21} />
+
                                     <div className="chat-titulo-texto">
                                         <strong>Mensagens</strong>
+
                                         <small>
                                             {totalMensagensNaoLidas > 0
                                                 ? `${totalMensagensNaoLidas} não lida(s)`
@@ -353,7 +572,9 @@ export default function ChatFlutuante({ usuarioLogado }) {
                             <button
                                 type="button"
                                 className="chat-icone"
-                                onClick={() => setMinimizado(!minimizado)}
+                                onClick={() =>
+                                    setMinimizado((atual) => !atual)
+                                }
                                 title="Minimizar"
                                 aria-label="Minimizar chat"
                             >
@@ -380,6 +601,7 @@ export default function ChatFlutuante({ usuarioLogado }) {
                             {erro && (
                                 <div className="chat-erro">
                                     {erro}
+
                                     <button
                                         type="button"
                                         onClick={() => setErro("")}
@@ -405,7 +627,7 @@ export default function ChatFlutuante({ usuarioLogado }) {
                                     </label>
 
                                     <div className="chat-lista">
-                                        {conversas.map((conversa) => (
+                                        {conversasValidas.map((conversa) => (
                                             <button
                                                 type="button"
                                                 className="chat-item"
@@ -414,23 +636,24 @@ export default function ChatFlutuante({ usuarioLogado }) {
                                                     abrirConversa(conversa)
                                                 }
                                             >
-                                                <div className="chat-avatar">
-                                                    {(conversa.contato?.nome || "?")
-                                                        .charAt(0)
-                                                        .toUpperCase()}
-                                                </div>
+                                                <AvatarChat
+                                                    nome={conversa?.contato?.nome}
+                                                    avatar={conversa?.contato?.avatar}
+                                                />
 
                                                 <div className="chat-item-texto">
                                                     <strong>
-                                                        {conversa.contato?.nome}
+                                                        {conversa?.contato?.nome ||
+                                                            "Contato indisponível"}
                                                     </strong>
+
                                                     <small>
-                                                        {conversa.ultimaMensagem?.conteudo ||
+                                                        {conversa?.ultimaMensagem?.conteudo ||
                                                             "Conversa iniciada"}
                                                     </small>
                                                 </div>
 
-                                                {conversa.naoLidas > 0 && (
+                                                {Number(conversa?.naoLidas) > 0 && (
                                                     <span className="chat-nao-lidas">
                                                         {conversa.naoLidas}
                                                     </span>
@@ -451,22 +674,24 @@ export default function ChatFlutuante({ usuarioLogado }) {
                                                     iniciarConversa(contato)
                                                 }
                                             >
-                                                <div className="chat-avatar">
-                                                    {(contato.nome || "?")
-                                                        .charAt(0)
-                                                        .toUpperCase()}
-                                                </div>
+                                                <AvatarChat
+                                                    nome={contato.nome}
+                                                    avatar={contato.avatar}
+                                                />
 
                                                 <div className="chat-item-texto">
-                                                    <strong>{contato.nome}</strong>
+                                                    <strong>
+                                                        {contato.nome || "Usuário"}
+                                                    </strong>
+
                                                     <small>
-                                                        {contato.tipo}
+                                                        {contato.tipo || ""}
                                                     </small>
                                                 </div>
                                             </button>
                                         ))}
 
-                                        {conversas.length === 0 &&
+                                        {conversasValidas.length === 0 &&
                                             contatosFiltrados.length === 0 && (
                                                 <p className="chat-vazio">
                                                     Nenhum contato encontrado.
@@ -480,7 +705,7 @@ export default function ChatFlutuante({ usuarioLogado }) {
                                         className="chat-mensagens"
                                         ref={listaRef}
                                     >
-                                        {mensagens.map((mensagem) => {
+                                        {mensagensValidas.map((mensagem) => {
                                             const minha =
                                                 Number(mensagem.id_remetente) ===
                                                 idUsuario;
@@ -498,15 +723,17 @@ export default function ChatFlutuante({ usuarioLogado }) {
                                                         <p>{mensagem.conteudo}</p>
 
                                                         <small>
-                                                            {new Date(
-                                                                mensagem.enviada_em
-                                                            ).toLocaleTimeString(
-                                                                "pt-BR",
-                                                                {
-                                                                    hour: "2-digit",
-                                                                    minute: "2-digit"
-                                                                }
-                                                            )}
+                                                            {mensagem.enviada_em
+                                                                ? new Date(
+                                                                    mensagem.enviada_em
+                                                                ).toLocaleTimeString(
+                                                                    "pt-BR",
+                                                                    {
+                                                                        hour: "2-digit",
+                                                                        minute: "2-digit"
+                                                                    }
+                                                                )
+                                                                : ""}
 
                                                             {minha && (
                                                                 <CheckCheck
@@ -524,11 +751,12 @@ export default function ChatFlutuante({ usuarioLogado }) {
                                             );
                                         })}
 
-                                        {mensagens.length === 0 && !carregando && (
-                                            <p className="chat-vazio">
-                                                Envie a primeira mensagem.
-                                            </p>
-                                        )}
+                                        {mensagensValidas.length === 0 &&
+                                            !carregando && (
+                                                <p className="chat-vazio">
+                                                    Envie a primeira mensagem.
+                                                </p>
+                                            )}
                                     </div>
 
                                     <form
@@ -558,8 +786,7 @@ export default function ChatFlutuante({ usuarioLogado }) {
                                             type="submit"
                                             className="chat-enviar"
                                             disabled={
-                                                !texto.trim() ||
-                                                carregando
+                                                !texto.trim() || carregando
                                             }
                                             title="Enviar mensagem"
                                             aria-label="Enviar mensagem"

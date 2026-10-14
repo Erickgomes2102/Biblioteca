@@ -103,7 +103,8 @@ class usuariosController {
             nome,
             email,
             senha,
-            tipo
+            tipo,
+            avatar
         } = req.body
 
         const service = new usuariosServices()
@@ -115,7 +116,8 @@ class usuariosController {
                     nome,
                     email,
                     senha,
-                    tipo
+                    tipo,
+                    avatar
                 }
             )
 
