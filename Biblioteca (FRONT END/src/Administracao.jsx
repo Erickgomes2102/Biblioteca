@@ -6,6 +6,7 @@ import {
   Trash2
 } from "lucide-react";
 
+import { imagemDoAvatar } from "./avatares";
 import api from "./services/api";
 
 import {
@@ -38,7 +39,11 @@ export default function Administracao({
     if (!avatar || typeof avatar !== "string") {
       return null;
     }
-
+      
+      const valor = avatar.trim();
+    if ( valor.startsWith("avatar_")) {
+        return imagemDoAvatar(valor ) || null;
+    }
     if (
       avatar.startsWith("http://") ||
       avatar.startsWith("https://") ||

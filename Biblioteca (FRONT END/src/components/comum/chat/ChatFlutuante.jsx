@@ -1,3 +1,4 @@
+import { imagemDoAvatar } from "../../../avatares";
 
 import React, {
     useCallback,
@@ -36,7 +37,10 @@ function obterUrlAvatar(avatar) {
     }
 
     const valor = avatar.trim();
-
+    
+    if ( valor.startsWith("avatar_")) {
+        return imagemDoAvatar(valor ) || null;
+    }
     if (
         valor.startsWith("https://") ||
         valor.startsWith("http://") ||
@@ -50,7 +54,8 @@ function obterUrlAvatar(avatar) {
         return `${baseURL}${valor}`;
     }
 
-    return null;
+
+    return null
 }
 
 function AvatarChat({
@@ -462,9 +467,14 @@ export default function ChatFlutuante({ usuarioLogado }) {
         (contato) => contato && typeof contato === "object"
     );
 
-    const conversasValidas = conversas.filter(
-        (conversa) => conversa && typeof conversa === "object"
-    );
+    const conversasValidas = Array.isArray(conversas)
+        ? conversas.filter(
+            (conversa) =>
+                conversa !== null &&
+                typeof conversa === "object" &&
+                !Array.isArray(conversa)
+        )
+        : [];
 
     const mensagensValidas = mensagens.filter(
         (mensagem) => mensagem && typeof mensagem === "object"
@@ -513,9 +523,8 @@ export default function ChatFlutuante({ usuarioLogado }) {
 
             {aberto && (
                 <section
-                    className={`chat-janela ${
-                        minimizado ? "chat-minimizado" : ""
-                    }`}
+                    className={`chat-janela ${minimizado ? "chat-minimizado" : ""
+                        }`}
                 >
                     <header className="chat-cabecalho">
                         <div className="chat-titulo">
@@ -632,28 +641,25 @@ export default function ChatFlutuante({ usuarioLogado }) {
                                                 type="button"
                                                 className="chat-item"
                                                 key={conversa.id_conversa}
-                                                onClick={() =>
-                                                    abrirConversa(conversa)
-                                                }
+                                                onClick={() => abrirConversa(conversa)}
                                             >
                                                 <AvatarChat
-                                                    nome={conversa?.contato?.nome}
-                                                    avatar={conversa?.contato?.avatar}
+                                                    nome={conversa.contato?.nome}
+                                                    avatar={conversa.contato?.avatar}
                                                 />
 
                                                 <div className="chat-item-texto">
                                                     <strong>
-                                                        {conversa?.contato?.nome ||
-                                                            "Contato indisponível"}
+                                                        {conversa.contato?.nome || "Contato indisponível"}
                                                     </strong>
 
                                                     <small>
-                                                        {conversa?.ultimaMensagem?.conteudo ||
+                                                        {conversa.ultimaMensagem?.conteudo ||
                                                             "Conversa iniciada"}
                                                     </small>
                                                 </div>
 
-                                                {Number(conversa?.naoLidas) > 0 && (
+                                                {Number(conversa.naoLidas) > 0 && (
                                                     <span className="chat-nao-lidas">
                                                         {conversa.naoLidas}
                                                     </span>
@@ -713,11 +719,10 @@ export default function ChatFlutuante({ usuarioLogado }) {
                                             return (
                                                 <div
                                                     key={mensagem.id_mensagem}
-                                                    className={`chat-linha-mensagem ${
-                                                        minha
+                                                    className={`chat-linha-mensagem ${minha
                                                             ? "chat-minha-mensagem"
                                                             : ""
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <div className="chat-balao">
                                                         <p>{mensagem.conteudo}</p>

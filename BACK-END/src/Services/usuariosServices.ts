@@ -77,18 +77,24 @@ class usuariosServices {
     // LISTAR USUÁRIOS
     // =====================================================
 
-    async listarUsuarios() {
-
-        const usuarios =
-            await prismaClient.usuario.findMany({
-                orderBy: {
-                    nome: "asc"
-                }
-            });
-
-        return usuarios;
-    }
-
+   async listarUsuarios() {
+    return await prismaClient.usuario.findMany({
+        where: {
+            ativo: true
+        },
+        select: {
+            id_usuarios: true,
+            nome: true,
+            email: true,
+            tipo: true,
+            avatar: true,
+            ativo: true
+        },
+        orderBy: {
+            nome: "asc"
+        }
+    });
+}
 
     // =====================================================
     // BUSCAR USUÁRIO POR ID
@@ -228,37 +234,37 @@ class usuariosServices {
     // EXCLUIR USUÁRIO
     // =====================================================
 
-    async excluirUsuario(
-        id_usuarios: number
-    ) {
-
-        const usuario =
-            await prismaClient.usuario.findUnique({
-                where: {
-                    id_usuarios
-                }
-            });
-
-        if (!usuario) {
-            throw new Error(
-                "Usuário não encontrado"
-            );
+  async excluirUsuario(id_usuarios: number) {
+    const usuario = await prismaClient.usuario.findUnique({
+        where: { id_usuarios },
+        select: {
+            id_usuarios: true,
+            ativo: true
         }
+    });
 
-        if (!usuario.ativo) {
-            throw new Error("Este usuário já está desativado")
-        }
-
-        await prismaClient.usuario.update({
-            where: { id_usuarios },
-            data: { ativo: false }
-        });
-
-        return {
-            Dados: "Acesso do Usuário desativado."
-        }
-
+    if (!usuario) {
+        throw new Error("Usuário não encontrado.");
     }
+
+    if (!usuario.ativo) {
+        throw new Error("Este usuário já está desativado.");
+    }
+
+    const usuarioAtualizado = await prismaClient.usuario.update({
+        where: { id_usuarios },
+        data: { ativo: false },
+        select: {
+            id_usuarios: true,
+            ativo: true
+        }
+    });
+
+    return {
+        mensagem: "Usuário desativado com sucesso.",
+        usuario: usuarioAtualizado
+    };
+}
 
 
     // =====================================================

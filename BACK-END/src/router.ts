@@ -253,6 +253,7 @@ router.put("/EditarUsuario/:id", authMiddleware, new usuariosController().editar
 router.patch("/Administracao/Usuarios/Privilegio/:id_usuarios/", authMiddleware, adminMiddleware, new usuariosController().alterarPrivilegio)
 
 router.delete("/Administracao/Usuarios/Deletar/:id_usuarios", authMiddleware, adminMiddleware, new usuariosController().excluirUsuario)
+router.delete("/MeuPerfil/DesativarConta/:id_usuarios", authMiddleware, new usuariosController().excluirUsuario)
 
 router.patch(
     "/CancelarSuspensao/:id_leitores", authMiddleware, new leitoresController().cancelarSuspensao

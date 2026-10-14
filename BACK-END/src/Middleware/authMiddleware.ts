@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import prismaClient from "../Prisma/PrismaClient";
 
 interface Payload {
     sub: string;
@@ -13,7 +14,7 @@ declare global {
     }
 }
 
-export function authMiddleware(
+export async function authMiddleware(
     req: Request,
     res: Response,
     next: NextFunction
@@ -40,7 +41,29 @@ export function authMiddleware(
             process.env.JWT_SECRETO as string
         ) as Payload;
 
+        if (!sub || !/^\d+$/.test(sub)) {
+            return res.status(401).json({
+                Dados: "Token Inválido"
+            });
+        }
+
         req.usuarioId = sub;
+
+        const usuario = await prismaClient.usuario.findUnique({
+            where: {
+                id_usuarios: Number(sub)
+            },
+            select: {
+                id_usuarios: true,
+                ativo: true
+            }
+        });
+
+        if (!usuario || !usuario.ativo) {
+            return res.status(401).json({
+                Dados: "Usuário inativo ou não autenticado"
+            });
+        }
 
         return next();
 

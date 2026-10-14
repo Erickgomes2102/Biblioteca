@@ -47,7 +47,6 @@ function mensagemErro(error, mensagemPadrao) {
     resposta: error.response?.data,
     url: error.config?.url,
     metodo: error.config?.method,
-    dadosEnviados: error.config?.data,
   });
 
   return mensagem;
@@ -128,7 +127,7 @@ export default function PerfilUsuario({
         avatar: usuarioResposta?.avatar ?? avatar,
       };
 
-      onAtualizar(usuarioAtualizado);
+      onAtualizar?.(usuarioAtualizado);
 
       setNome(usuarioAtualizado.nome || "");
       setEmail(usuarioAtualizado.email || "");
@@ -189,8 +188,6 @@ export default function PerfilUsuario({
         formData
       );
 
-      console.log("[PerfilUsuario] Upload de avatar:", resposta.data);
-
       const novoAvatar = extrairAvatarDaResposta(
         resposta.data,
         avatar
@@ -198,7 +195,7 @@ export default function PerfilUsuario({
 
       setAvatar(novoAvatar);
 
-      onAtualizar({
+      onAtualizar?.({
         ...usuario,
         avatar: novoAvatar,
       });
@@ -227,7 +224,7 @@ export default function PerfilUsuario({
 
       setAvatar("avatar_1");
 
-      onAtualizar({
+      onAtualizar?.({
         ...usuario,
         avatar: "avatar_1",
       });
@@ -242,11 +239,13 @@ export default function PerfilUsuario({
 
   const excluirConta = async () => {
     const confirmar = window.confirm(
-      "Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita."
+      "Tem certeza que deseja desativar sua conta? Você será desconectado e precisará entrar novamente para acessar o sistema."
     );
 
-    if (!confirmar || !idUsuario) {
-      if (!idUsuario) setErro("ID do usuário não encontrado.");
+    if (!confirmar) return;
+
+    if (!idUsuario) {
+      setErro("ID do usuário não encontrado.");
       return;
     }
 
@@ -255,11 +254,24 @@ export default function PerfilUsuario({
     setSucesso("");
 
     try {
-      await api.delete(`/ExcluirUsuario/${idUsuario}`);
-      onExcluido();
+      await api.delete(
+        `/MeuPerfil/DesativarConta/${idUsuario}`
+      );
+
+      setSucesso("Conta desativada. Encerrando sua sessão...");
+
+      // O componente pai deve limpar a sessão e redirecionar ao login.
+      if (typeof onExcluido === "function") {
+        onExcluido();
+      } else {
+        setErro(
+          "A conta foi desativada, mas o componente pai não forneceu a função de logout."
+        );
+        setExcluindo(false);
+      }
     } catch (error) {
       setErro(
-        mensagemErro(error, "Não foi possível excluir a conta.")
+        mensagemErro(error, "Não foi possível desativar a conta.")
       );
       setExcluindo(false);
     }
@@ -276,7 +288,7 @@ export default function PerfilUsuario({
       <div style={{ width: "100%", maxWidth: 420 }}>
         <Cabecalho
           titulo="Meu perfil"
-          subtitulo="Edite seus dados ou exclua sua conta"
+          subtitulo="Edite seus dados ou desative sua conta"
         />
 
         <form
@@ -388,6 +400,7 @@ export default function PerfilUsuario({
                 >
                   <UserRound size={20} color="#6B7280" />
                 </button>
+
                 {AVATARES.map((a) => (
                   <button
                     key={a.codigo}
@@ -518,13 +531,9 @@ export default function PerfilUsuario({
             </p>
           )}
 
-         <BotaoPrincipal
-  type="submit"
-  disabled={salvando}
-  full
->
-  {salvando ? "Salvando..." : "Salvar alterações"}
-</BotaoPrincipal>
+          <BotaoPrincipal type="submit" disabled={salvando} full>
+            {salvando ? "Salvando..." : "Salvar alterações"}
+          </BotaoPrincipal>
         </form>
 
         <div
@@ -542,7 +551,7 @@ export default function PerfilUsuario({
               marginBottom: 10,
             }}
           >
-            Excluir sua conta é uma ação permanente.
+            Ao desativar sua conta, você será desconectado do sistema.
           </p>
 
           <button
@@ -560,7 +569,7 @@ export default function PerfilUsuario({
               cursor: excluindo ? "wait" : "pointer",
             }}
           >
-            {excluindo ? "Excluindo..." : "Excluir minha conta"}
+            {excluindo ? "Desativando..." : "Desativar minha conta"}
           </button>
         </div>
       </div>
