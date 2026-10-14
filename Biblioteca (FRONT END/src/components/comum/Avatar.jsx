@@ -2,7 +2,7 @@
 import React from "react";
 import { cores } from "../../empréstimos/styles/tema";
 import { UserRound } from "lucide-react";
-import { imagemDoAvatar } from "../../empréstimos/utils/avatares";
+import { imagemDoAvatar } from "../../avatares";
 
 const API_URL = "http://localhost:3334";
 

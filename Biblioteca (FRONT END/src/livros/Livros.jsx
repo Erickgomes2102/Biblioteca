@@ -203,7 +203,7 @@ export default function Livros({
                 >
                   <div
                     style={{
-                      fontFamily: "Georgia, serif",
+                      fontFamily: "'Inter', sans-serif",
                       fontSize: 19,
                       fontWeight: 700,
                       color: cores.tinta,
@@ -266,7 +266,7 @@ export default function Livros({
                 >
                   <div
                     style={{
-                      fontFamily: "Georgia, serif",
+                      fontFamily: "'Inter', sans-serif",
                       fontSize: 25,
                       lineHeight: 1,
                       color: cores.verdeOk,

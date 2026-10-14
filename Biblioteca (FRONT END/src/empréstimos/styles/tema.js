@@ -12,7 +12,7 @@ export const cores = {
   linha: "#DFD6BF",
 };
 
-export const fontDisplay = "'Source Serif 4', Georgia, serif";
+export const fontDisplay = "'Inter', sans-serif";
 export const fontUI = "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 export const inputStyle = {

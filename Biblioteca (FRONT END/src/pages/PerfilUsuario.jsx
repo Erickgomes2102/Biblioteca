@@ -2,7 +2,7 @@
 import React, { useRef, useState } from "react";
 import api from "../services/api";
 import { cores, fontUI, inputStyle } from "../empréstimos/styles/tema";
-import { AVATARES } from "../empréstimos/utils/avatares";
+import { AVATARES } from "../avatares";
 import Cabecalho from "../components/comum/Cabecalho";
 import Campo from "../components/comum/Campo";
 import BotaoPrincipal from "../components/comum/BotaoPrincipal";
@@ -363,6 +363,31 @@ export default function PerfilUsuario({
                   border: `1px solid ${cores.linha}`,
                 }}
               >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAvatar(null);
+                    setSeletorAberto(false);
+                  }}
+                  title="Sem foto"
+                  aria-label="Ficar sem foto de perfil"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    border: avatar == null
+                      ? `2px solid ${cores.latao}`
+                      : "2px solid transparent",
+                    background: cores.papel,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                  }}
+                >
+                  <UserRound size={20} color="#6B7280" />
+                </button>
                 {AVATARES.map((a) => (
                   <button
                     key={a.codigo}
@@ -493,21 +518,13 @@ export default function PerfilUsuario({
             </p>
           )}
 
-          <BotaoPrincipal onClick={() => {}} full>
-            <button
-              type="submit"
-              disabled={salvando}
-              style={{
-                all: "unset",
-                width: "100%",
-                textAlign: "center",
-                cursor: salvando ? "wait" : "pointer",
-                opacity: salvando ? 0.7 : 1,
-              }}
-            >
-              {salvando ? "Salvando..." : "Salvar alterações"}
-            </button>
-          </BotaoPrincipal>
+         <BotaoPrincipal
+  type="submit"
+  disabled={salvando}
+  full
+>
+  {salvando ? "Salvando..." : "Salvar alterações"}
+</BotaoPrincipal>
         </form>
 
         <div
