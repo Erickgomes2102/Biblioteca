@@ -47,24 +47,27 @@ model Usuario {
   avatar      String? @db.VarChar(500)
   ativo       Boolean @default(true)
 
+  id_bibliotecas Int
 
-  leitores    Leitor[]
-  emprestimos Emprestimo[]
-    conversasParticipanteA Conversa[] @relation("ParticipanteA")
-  conversasParticipanteB Conversa[] @relation("ParticipanteB")
-  mensagensEnviadas     Mensagem[] @relation("RemetenteMensagem")
+  leitores               Leitor[]
+  emprestimos            Emprestimo[]
+  conversasParticipanteA Conversa[]   @relation("ParticipanteA")
+  conversasParticipanteB Conversa[]   @relation("ParticipanteB")
+  mensagensEnviadas      Mensagem[]   @relation("RemetenteMensagem")
+
+  biblioteca Biblioteca @relation(fields: [id_bibliotecas], references: [id_bibliotecas])
 
   @@map("usuarios")
 }
- 
+
 model Leitor {
-  id_leitores Int    @id @default(autoincrement())
-  nome        String @db.VarChar(150)
-  cpf         String @unique @db.VarChar(11)
-  telefone    String @db.VarChar(20)
-  email       String @unique @db.VarChar(150)
+  id_leitores  Int       @id @default(autoincrement())
+  nome         String    @db.VarChar(150)
+  cpf          String    @unique @db.VarChar(11)
+  telefone     String    @db.VarChar(20)
+  email        String    @unique @db.VarChar(150)
   suspenso_ate DateTime? @db.DateTime(3)
-  
+
   id_usuarios Int
 
   usuario Usuario @relation(fields: [id_usuarios], references: [id_usuarios])
@@ -75,12 +78,12 @@ model Leitor {
 }
 
 model Emprestimo {
-  id_emprestimo   Int       @id @default(autoincrement())
-  data_emprestimo DateTime  @db.Date
-  data_prevista   DateTime? @db.Date
-  data_devolucao  DateTime  @db.Date
-  status          String    @db.VarChar(100)
-  responsavel_nome String? @db.VarChar(100)
+  id_emprestimo    Int       @id @default(autoincrement())
+  data_emprestimo  DateTime  @db.Date
+  data_prevista    DateTime? @db.Date
+  data_devolucao   DateTime  @db.Date
+  status           String    @db.VarChar(100)
+  responsavel_nome String?   @db.VarChar(100)
 
   multa Decimal @default(0) @db.Decimal(10, 2)
 
@@ -88,8 +91,8 @@ model Emprestimo {
   id_livros   Int
   id_usuarios Int?
 
-  leitor  Leitor  @relation(fields: [id_leitores], references: [id_leitores])
-  livro   Livro   @relation(fields: [id_livros], references: [id_livros])
+  leitor  Leitor   @relation(fields: [id_leitores], references: [id_leitores])
+  livro   Livro    @relation(fields: [id_livros], references: [id_livros])
   usuario Usuario? @relation(fields: [id_usuarios], references: [id_usuarios], onDelete: SetNull)
 
   multaRegistro Multa?
@@ -110,18 +113,17 @@ model Multa {
   emprestimo Emprestimo @relation(fields: [id_emprestimo], references: [id_emprestimo])
 
   @@map("multas")
-  
 }
 
 model Conversa {
-  id_conversa Int @id @default(autoincrement())
+  id_conversa     Int      @id @default(autoincrement())
   participanteAId Int
   participanteBId Int
-  criada_em DateTime @default(now())
+  criada_em       DateTime @default(now())
 
   participanteA Usuario @relation("ParticipanteA", fields: [participanteAId], references: [id_usuarios])
 
-  participanteB Usuario @relation( "ParticipanteB", fields: [participanteBId], references: [id_usuarios])
+  participanteB Usuario @relation("ParticipanteB", fields: [participanteBId], references: [id_usuarios])
 
   mensagens Mensagem[]
 
@@ -130,21 +132,32 @@ model Conversa {
 }
 
 model Mensagem {
-  id_mensagem Int @id @default(autoincrement())
-  conteudo String @db.VarChar(2000)
-  enviada_em DateTime @default(now()) @db.DateTime(3)
-  lida_em DateTime? @db.DateTime(3)
+  id_mensagem Int       @id @default(autoincrement())
+  conteudo    String    @db.VarChar(2000)
+  enviada_em  DateTime  @default(now()) @db.DateTime(3)
+  lida_em     DateTime? @db.DateTime(3)
 
-  id_conversa Int
+  id_conversa  Int
   id_remetente Int
-  
+
   conversa Conversa @relation(fields: [id_conversa], references: [id_conversa], onDelete: Cascade)
-  
+
   remetente Usuario @relation("RemetenteMensagem", fields: [id_remetente], references: [id_usuarios])
 
   @@index([id_conversa, enviada_em])
   @@index([id_remetente, lida_em])
   @@map("mensagens")
-  
-  
+}
+
+model Biblioteca {
+  id_bibliotecas Int      @id @default(autoincrement())
+  nome           String   @db.VarChar(150)
+  codigo         String   @unique @db.VarChar(20)
+  pin_hash       String   @db.VarChar(255)
+  ativa          Boolean  @default(true)
+  criada_em      DateTime @default(now())
+
+  usuarios Usuario[]
+
+  @@map("bibliotecas")
 }
