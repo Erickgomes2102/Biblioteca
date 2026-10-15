@@ -22,6 +22,9 @@ export default function Leitores({
   const [editando, setEditando] = useState(null);
   const [cancelandoSuspensao, setCancelandoSuspensao] = useState(null);
 
+  const ehBibliotecario =
+    usuarioLogado?.tipo === "BIBLIOTECÁRIO";
+
   const ehAdministrador =
     usuarioLogado?.tipo === "ADMINISTRADOR";
 
@@ -38,12 +41,30 @@ export default function Leitores({
 
     return new Date(data).toLocaleDateString("pt-BR");
   };
+  const obterUsuarioResponsavel = (leitor) => {
+    const idResponsavel =
+      leitor?.id_usuarios ??
+      leitor?.usuario?.id_usuarios ??
+      leitor?.usuario?.id;
+
+    if (leitor?.usuario?.nome) {
+      return leitor.usuario;
+    }
+
+    return (
+      listaUsuarios.find(
+        (usuario) =>
+          Number(usuario.id_usuarios ?? usuario.id) ===
+          Number(idResponsavel)
+      ) || null
+    );
+  };
 
   const estaSuspenso = (leitor) => {
     if (!leitor?.suspenso_ate) return false;
 
     return new Date(leitor.suspenso_ate) > new Date();
-  };
+  }
 
   const filtrados = listaLeitores.filter((leitor) => {
     const texto = [
@@ -187,10 +208,10 @@ export default function Leitores({
         Array.isArray(listaAtualizada.data)
           ? listaAtualizada.data
           : listaLeitores.map((leitor) =>
-              leitor.id_leitores === editando.id_leitores
-                ? { ...leitor, ...leitorAtualizado }
-                : leitor
-            )
+            leitor.id_leitores === editando.id_leitores
+              ? { ...leitor, ...leitorAtualizado }
+              : leitor
+          )
       );
 
       setEditando(null);
@@ -244,6 +265,12 @@ export default function Leitores({
           const telefone =
             leitor?.telefone || "Telefone não informado";
           const suspenso = estaSuspenso(leitor);
+          const usuarioResponsavel = obterUsuarioResponsavel(leitor);
+          if (leitor.id_leitores === filtrados[0]?.id_leitores) {
+            console.log("LEITOR:", leitor);
+            console.log("USUÁRIOS:", listaUsuarios);
+            console.log("RESPONSÁVEL ENCONTRADO:", usuarioResponsavel);
+          }
           const processando =
             cancelandoSuspensao === leitor.id_leitores;
 
@@ -275,7 +302,8 @@ export default function Leitores({
               }
               sub={
                 <>
-                  {email} · {telefone}
+                  {email} · {telefone} · Responsável:{" "}
+                  {usuarioResponsavel?.nome || "Não atribuído"}
 
                   {suspenso && (
                     <span>
@@ -339,6 +367,8 @@ export default function Leitores({
           );
         })}
 
+
+
         {filtrados.length === 0 && (
           <p
             style={{
@@ -357,6 +387,7 @@ export default function Leitores({
           onFechar={() => setNovo(null)}
           onSalvar={adicionar}
           usuarios={listaUsuarios}
+          usuarioLogado={usuarioLogado}
         />
       )}
 
@@ -365,6 +396,7 @@ export default function Leitores({
           onFechar={() => setEditando(null)}
           onSalvar={editar}
           usuarios={listaUsuarios}
+          usuarioLogado={usuarioLogado}
           leitor={editando}
         />
       )}

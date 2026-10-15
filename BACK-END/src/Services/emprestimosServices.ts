@@ -189,18 +189,27 @@ class emprestimosServices {
                 );
             }
         }
-
-        return await prismaClient.emprestimo.findMany({
+        
+return await prismaClient.emprestimo.findMany({
+    include: {
+        leitor: {
             include: {
-                leitor: true,
-                livro: true,
-                usuario: true,
-                multaRegistro: true
-            },
-            orderBy: {
-                data_emprestimo: "desc"
+                usuario: {
+                    select: {
+                        id_usuarios: true,
+                        nome: true
+                    }
+                }
             }
-        });
+        },
+        livro: true,
+        usuario: true,
+        multaRegistro: true
+    },
+    orderBy: {
+        data_emprestimo: "desc"
+    }
+});
     }
 
     // =====================================================

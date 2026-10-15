@@ -8,22 +8,46 @@ import BotaoPrincipal from "../components/comum/BotaoPrincipal";
 export default function ModalLeitor({
   onFechar,
   onSalvar,
-  usuarios
+  usuarios = [],
+  usuarioLogado,
+  leitor = null
 }) {
-  const [nome, setNome] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [email, setEmail] = useState("");
-  const [id_usuarios, setIdUsuarios] = useState("");
+  const ehAdministrador =
+    usuarioLogado?.tipo === "ADMINISTRADOR";
+
+  const idUsuarioLogado =
+    usuarioLogado?.id_usuarios ?? usuarioLogado?.id;
+
+  const [nome, setNome] = useState(leitor?.nome || "");
+  const [cpf, setCpf] = useState(leitor?.cpf || "");
+  const [telefone, setTelefone] = useState(leitor?.telefone || "");
+  const [email, setEmail] = useState(leitor?.email || "");
+
+  const [id_usuarios, setIdUsuarios] = useState(() => {
+    if (ehAdministrador) {
+      return leitor?.id_usuarios
+        ? String(leitor.id_usuarios)
+        : "";
+    }
+
+    return idUsuarioLogado
+      ? String(idUsuarioLogado)
+      : "";
+  });
+
   const [erro, setErro] = useState("");
 
   const salvar = () => {
+    const usuarioResponsavel = ehAdministrador
+      ? id_usuarios
+      : idUsuarioLogado;
+
     if (
       !nome.trim() ||
       !cpf.trim() ||
       !telefone.trim() ||
       !email.trim() ||
-      !id_usuarios
+      !usuarioResponsavel
     ) {
       setErro("Preencha todos os campos.");
       return;
@@ -34,22 +58,20 @@ export default function ModalLeitor({
       cpf: cpf.trim(),
       telefone: telefone.trim(),
       email: email.trim(),
-      id_usuarios: Number(id_usuarios)
+      id_usuarios: Number(usuarioResponsavel)
     });
   };
 
   return (
     <Modal
       onFechar={onFechar}
-      titulo="Cadastrar leitor"
+      titulo={leitor ? "Editar leitor" : "Cadastrar leitor"}
     >
       <Campo label="Nome completo">
         <input
           style={inputStyle}
           value={nome}
-          onChange={(e) =>
-            setNome(e.target.value)
-          }
+          onChange={(e) => setNome(e.target.value)}
           placeholder="ex: Maria Oliveira"
         />
       </Campo>
@@ -58,9 +80,7 @@ export default function ModalLeitor({
         <input
           style={inputStyle}
           value={cpf}
-          onChange={(e) =>
-            setCpf(e.target.value)
-          }
+          onChange={(e) => setCpf(e.target.value)}
           placeholder="ex: 12345678900"
           maxLength={11}
         />
@@ -70,9 +90,7 @@ export default function ModalLeitor({
         <input
           style={inputStyle}
           value={telefone}
-          onChange={(e) =>
-            setTelefone(e.target.value)
-          }
+          onChange={(e) => setTelefone(e.target.value)}
           placeholder="ex: 14990000000"
         />
       </Campo>
@@ -82,35 +100,33 @@ export default function ModalLeitor({
           type="email"
           style={inputStyle}
           value={email}
-          onChange={(e) =>
-            setEmail(e.target.value)
-          }
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="ex: maria@email.com"
         />
       </Campo>
 
-      <Campo label="Usuário responsável">
-        <select
-          style={inputStyle}
-          value={id_usuarios}
-          onChange={(e) =>
-            setIdUsuarios(e.target.value)
-          }
-        >
-          <option value="">
-            Selecione um usuário
-          </option>
-
-          {usuarios.map((usuario) => (
-            <option
-              key={usuario.id_usuarios}
-              value={usuario.id_usuarios}
-            >
-              {usuario.nome}
+        {ehAdministrador && (
+        <Campo label="Usuário responsável">
+          <select
+            style={inputStyle}
+            value={id_usuarios}
+            onChange={(e) => setIdUsuarios(e.target.value)}
+          >
+            <option value="">
+              Selecione um usuário
             </option>
-          ))}
-        </select>
-      </Campo>
+
+            {usuarios.map((usuario) => (
+              <option
+                key={usuario.id_usuarios}
+                value={usuario.id_usuarios}
+              >
+                {usuario.nome}
+              </option>
+            ))}
+          </select>
+        </Campo>
+      )}
 
       {erro && (
         <p
@@ -123,10 +139,7 @@ export default function ModalLeitor({
         </p>
       )}
 
-      <BotaoPrincipal
-        onClick={salvar}
-        full
-      >
+      <BotaoPrincipal onClick={salvar} full>
         Salvar leitor
       </BotaoPrincipal>
     </Modal>

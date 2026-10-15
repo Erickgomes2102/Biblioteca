@@ -136,6 +136,19 @@ export default function Emprestimos({
     );
   };
 
+  const obterUsuarioResponsavelLeitor = (leitor) => {
+    if (!leitor) return null;
+
+    return (
+      leitor.usuario ||
+      usuarios.find(
+        (usuario) =>
+          Number(usuario.id_usuarios) ===
+          Number(leitor.id_usuarios)
+      ) || null
+    )
+  }
+
   // =====================================================
   // SUSPENSÃO DO LEITOR
   // =====================================================
@@ -174,7 +187,7 @@ export default function Emprestimos({
     );
   };
 
-    const estaAtrasado = (emprestimo) => {
+  const estaAtrasado = (emprestimo) => {
     if (
       !emprestimo.data_prevista ||
       emprestimo.status !== "ATIVO"
@@ -246,6 +259,7 @@ export default function Emprestimos({
   const filtrados = emprestimos.filter((emprestimo) => {
     const livro = obterLivro(emprestimo);
     const leitor = obterLeitor(emprestimo);
+    const usuarioResponsavel = obterUsuarioResponsavelLeitor(leitor);
 
     const textoBusca = (
       (livro?.titulo || "") +
@@ -564,63 +578,63 @@ export default function Emprestimos({
   // QUITAR MULTA
   // =====================================================
 
-const quitarMulta = async (id_emprestimo) => {
-  try {
-    const emprestimoOriginal = emprestimos.find(
-      (item) =>
-        Number(item.id_emprestimo) === Number(id_emprestimo)
-    );
+  const quitarMulta = async (id_emprestimo) => {
+    try {
+      const emprestimoOriginal = emprestimos.find(
+        (item) =>
+          Number(item.id_emprestimo) === Number(id_emprestimo)
+      );
 
-    const resposta = await api.patch(
-      `/PagarMulta/${id_emprestimo}`
-    );
+      const resposta = await api.patch(
+        `/PagarMulta/${id_emprestimo}`
+      );
 
-    await carregarEmprestimos();
+      await carregarEmprestimos();
 
-    // Atualiza o estoque local somente se o backend
-    // confirmou que o livro foi devolvido nesta operação.
-    if (
-      resposta.data?.livro_devolvido === true &&
-      emprestimoOriginal &&
-      typeof setLivros === "function"
-    ) {
-      setLivros((listaAtual) =>
-        listaAtual.map((livro) =>
-          Number(livro.id_livros) ===
-          Number(emprestimoOriginal.id_livros)
-            ? {
+      // Atualiza o estoque local somente se o backend
+      // confirmou que o livro foi devolvido nesta operação.
+      if (
+        resposta.data?.livro_devolvido === true &&
+        emprestimoOriginal &&
+        typeof setLivros === "function"
+      ) {
+        setLivros((listaAtual) =>
+          listaAtual.map((livro) =>
+            Number(livro.id_livros) ===
+              Number(emprestimoOriginal.id_livros)
+              ? {
                 ...livro,
                 quantidade: Number(livro.quantidade) + 1
               }
-            : livro
-        )
+              : livro
+          )
+        );
+      }
+
+      if (
+        Number(multaSelecionada?.id_emprestimo) ===
+        Number(id_emprestimo)
+      ) {
+        const consulta = await api.get(
+          `/ConsultarMulta/${id_emprestimo}`
+        );
+
+        setMultaSelecionada(consulta.data);
+      }
+    } catch (error) {
+      console.error(
+        "Erro ao quitar multa:",
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.response?.data?.erro ||
+        "Erro ao quitar multa."
       );
     }
-
-    if (
-      Number(multaSelecionada?.id_emprestimo) ===
-      Number(id_emprestimo)
-    ) {
-      const consulta = await api.get(
-        `/ConsultarMulta/${id_emprestimo}`
-      );
-
-      setMultaSelecionada(consulta.data);
-    }
-  } catch (error) {
-    console.error(
-      "Erro ao quitar multa:",
-      error.response?.data || error.message
-    );
-
-    alert(
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.response?.data?.erro ||
-      "Erro ao quitar multa."
-    );
-  }
-};
+  };
 
   // =====================================================
   // ESTILO DOS FILTROS
@@ -650,14 +664,14 @@ const quitarMulta = async (id_emprestimo) => {
       return
     }
 
-    try { 
+    try {
       await api.delete(`/ExcluirEmprestimo/${emprestimo.id_emprestimo}`)
       await carregarEmprestimos();
 
-      if (Number(multaSelecionada?.id_emprestimo) === Number(emprestimo.id_emprestimo)) { setMultaSelecionada(null)}
-    } 
-      
-     catch (error) {
+      if (Number(multaSelecionada?.id_emprestimo) === Number(emprestimo.id_emprestimo)) { setMultaSelecionada(null) }
+    }
+
+    catch (error) {
 
       console.error(
         "Erro ao excluir empréstimo:", error.response?.data || error.message
@@ -666,7 +680,7 @@ const quitarMulta = async (id_emprestimo) => {
       alert(
         error.response?.data?.message ||
         error.response?.data?.error ||
-        error.response?.data?.erro || 
+        error.response?.data?.erro ||
         "Erro ao excluir empréstimo"
       )
 
@@ -778,7 +792,14 @@ const quitarMulta = async (id_emprestimo) => {
         {filtrados.map((emprestimo) => {
           const livro = obterLivro(emprestimo);
           const leitor = obterLeitor(emprestimo);
-
+          const usuarioResponsavel =
+            leitor?.usuario ||
+            usuarios.find(
+              (usuario) =>
+                Number(usuario.id_usuarios) ===
+                Number(leitor?.id_usuarios)
+            ) ||
+            null;
           const valorMulta = Number(emprestimo.multa || 0);
           const possuiMulta = temMulta(emprestimo);
           const statusAtualMulta = statusMulta(emprestimo);
@@ -792,6 +813,7 @@ const quitarMulta = async (id_emprestimo) => {
               titulo={livro?.titulo || "Livro não encontrado"}
               sub={
                 `${leitor?.nome || "Leitor não encontrado"} · ` +
+                `Responsável: ${usuarioResponsavel?.nome || "Não atribuído"} · ` +
                 `${formatarData(emprestimo.data_emprestimo)} · ` +
                 `previsto: ${formatarData(
                   emprestimo.data_prevista
@@ -878,80 +900,80 @@ const quitarMulta = async (id_emprestimo) => {
                   )}
                 </div>
               }
-              
-acao={
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 4,
-      flexWrap: "wrap",
-      justifyContent: "flex-end"
-    }}
-  >
-    {emprestimo.status === "ATIVO" &&
-      possuiMulta &&
-      statusAtualMulta === "PENDENTE" && (
-        <button
-          type="button"
-          onClick={() => quitarMulta(emprestimo.id_emprestimo)}
-          style={botaoIcone}
-          title="Pagar multa"
-        >
-          <DollarSign size={15} color={cores.carimbo} />
-        </button>
-      )}
 
-    {emprestimo.status === "ATIVO" &&
-      !possuiMulta && (
-        <>
-          <button
-            type="button"
-            onClick={() => iniciarDevolucao(emprestimo)}
-            style={botaoIcone}
-            title={
-              atrasado
-                ? "Escolher penalidade"
-                : "Devolver livro"
-            }
-          >
-            <CheckCircle2
-              size={15}
-              color={cores.verdeOk}
-            />
-          </button>
+              acao={
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    flexWrap: "wrap",
+                    justifyContent: "flex-end"
+                  }}
+                >
+                  {emprestimo.status === "ATIVO" &&
+                    possuiMulta &&
+                    statusAtualMulta === "PENDENTE" && (
+                      <button
+                        type="button"
+                        onClick={() => quitarMulta(emprestimo.id_emprestimo)}
+                        style={botaoIcone}
+                        title="Pagar multa"
+                      >
+                        <DollarSign size={15} color={cores.carimbo} />
+                      </button>
+                    )}
 
-          {!atrasado && (
-            <button
-              type="button"
-              onClick={() =>
-                cancelarEmprestimo(emprestimo.id_emprestimo)
+                  {emprestimo.status === "ATIVO" &&
+                    !possuiMulta && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => iniciarDevolucao(emprestimo)}
+                          style={botaoIcone}
+                          title={
+                            atrasado
+                              ? "Escolher penalidade"
+                              : "Devolver livro"
+                          }
+                        >
+                          <CheckCircle2
+                            size={15}
+                            color={cores.verdeOk}
+                          />
+                        </button>
+
+                        {!atrasado && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              cancelarEmprestimo(emprestimo.id_emprestimo)
+                            }
+                            style={botaoIcone}
+                            title="Cancelar empréstimo"
+                          >
+                            <XCircle
+                              size={15}
+                              color={cores.carimbo}
+                            />
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                  {ehAdministrador &&
+                    emprestimo.status !== "ATIVO" && (
+                      <button
+                        type="button"
+                        onClick={() => excluirEmprestimo(emprestimo)}
+                        style={botaoIcone}
+                        title="Excluir empréstimo permanentemente"
+                      >
+                        <Trash2 size={15} color={cores.carimbo} />
+                      </button>
+                    )}
+                </div>
               }
-              style={botaoIcone}
-              title="Cancelar empréstimo"
-            >
-              <XCircle
-                size={15}
-                color={cores.carimbo}
-              />
-            </button>
-          )}
-        </>
-      )}
-
-    {ehAdministrador &&
-      emprestimo.status !== "ATIVO" && (
-        <button
-          type="button"
-          onClick={() => excluirEmprestimo(emprestimo)}
-          style={botaoIcone}
-          title="Excluir empréstimo permanentemente"
-        >
-          <Trash2 size={15} color={cores.carimbo} />
-        </button>
-      )}
-  </div>
-}
             />
           );
         })}
@@ -1286,27 +1308,27 @@ acao={
             </select>
           </Campo>
 
-          
-{ehAdministrador && (
-  <Campo label="Usuário responsável">
-    <select
-      style={inputStyle}
-      value={id_usuarios}
-      onChange={(e) => setIdUsuarios(e.target.value)}
-    >
-      <option value="">Selecione o usuário</option>
 
-      {usuarios.map((usuario) => (
-        <option
-          key={usuario.id_usuarios}
-          value={usuario.id_usuarios}
-        >
-          {usuario.nome}
-        </option>
-      ))}
-    </select>
-  </Campo>
-)}
+          {ehAdministrador && (
+            <Campo label="Usuário responsável">
+              <select
+                style={inputStyle}
+                value={id_usuarios}
+                onChange={(e) => setIdUsuarios(e.target.value)}
+              >
+                <option value="">Selecione o usuário</option>
+
+                {usuarios.map((usuario) => (
+                  <option
+                    key={usuario.id_usuarios}
+                    value={usuario.id_usuarios}
+                  >
+                    {usuario.nome}
+                  </option>
+                ))}
+              </select>
+            </Campo>
+          )}
 
 
           <Campo label="Data do empréstimo">

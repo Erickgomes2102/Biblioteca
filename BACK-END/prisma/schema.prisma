@@ -56,7 +56,7 @@ model Usuario {
 
   @@map("usuarios")
 }
-
+ 
 model Leitor {
   id_leitores Int    @id @default(autoincrement())
   nome        String @db.VarChar(150)

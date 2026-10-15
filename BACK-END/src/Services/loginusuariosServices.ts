@@ -5,7 +5,7 @@ import { sign } from "jsonwebtoken";
 interface LogarUsuarios {
     email: string,
     senha: string 
-    id_usuario: Number
+    id_usuario?: Number
 }
 
 class LogarUsuariosServices {

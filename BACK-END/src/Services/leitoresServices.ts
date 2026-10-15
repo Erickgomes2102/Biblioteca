@@ -62,34 +62,57 @@ class leitoresServices {
 
     async listarLeitores() {
         return await prismaClient.leitor.findMany({
+            include: {
+                usuario: {
+                    select: {
+                        id_usuarios: true,
+                        nome: true
+                    }
+                }
+            },
             orderBy: { nome: "asc" }
-        });
+        })
     }
 
-    async buscarLeitorPorId(id_leitores: number) {
-        const leitor = await prismaClient.leitor.findUnique({
-            where: { id_leitores }
-        });
-
-        if (!leitor) {
-            throw new Error("Leitor não encontrado");
+   async buscarLeitorPorId(id_leitores: number) {
+    const leitor = await prismaClient.leitor.findUnique({
+        where: { id_leitores },
+        include: {
+            usuario: {
+                select: {
+                    id_usuarios: true,
+                    nome: true
+                }
+            }
         }
+    });
 
-        return leitor;
+    if (!leitor) {
+        throw new Error("Leitor não encontrado");
     }
+
+    return leitor;
+}
 
     async buscarLeitorPorCPF(cpf: string) {
-        const leitor = await prismaClient.leitor.findUnique({
-            where: { cpf }
-        });
-
-        if (!leitor) {
-            throw new Error("Leitor não encontrado");
+    const leitor = await prismaClient.leitor.findUnique({
+        where: { cpf },
+        include: {
+            usuario: {
+                select: {
+                    id_usuarios: true,
+                    nome: true
+                }
+            }
         }
+    });
 
-        return leitor;
+    if (!leitor) {
+        throw new Error("Leitor não encontrado");
     }
 
+    return leitor;
+}
     async editarLeitor(
         id_leitores: number,
         dados: editarLeitores
